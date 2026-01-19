@@ -4,7 +4,7 @@ Aplicación web Full Stack para la gestión de eventos.
 
 ## Estructura
 
-- `backend/`: API RESTful con FastAPI, SQLModel y PostgreSQL.
+- `mis-eventos-api/`: API RESTful con FastAPI, SQLModel y PostgreSQL.
 - `frontend/`: Interfaz de usuario con React y TypeScript.
 - `docker-compose.yml`: Orquestación de contenedores.
 - `Makefile`: Scripts para automatizar tareas.
