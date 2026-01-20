@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 from app.utils.enums import UserRole
 from pydantic import EmailStr, ConfigDict
 from sqlmodel import Field, SQLModel, Relationship
-from sqlalchemy import DateTime
+from sqlalchemy import DateTime, Text
 
 def utc_now():
     return datetime.now(timezone.utc)
@@ -23,6 +23,12 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utc_now, sa_type=DateTime(timezone=True))
     updated_at: datetime = Field(default_factory=utc_now, sa_type=DateTime(timezone=True))
+
+    # Perfil de usuario (especialmente para Ponentes)
+    biography: Optional[str] = Field(default=None, sa_type=Text)
+    organization: Optional[str] = Field(default=None, max_length=200)
+    position: Optional[str] = Field(default=None, max_length=100)
+    profile_picture: Optional[str] = Field(default=None)
 
     # Relaciones
     organized_events: list["Event"] = Relationship(back_populates="organizer")
