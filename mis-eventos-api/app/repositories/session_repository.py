@@ -6,7 +6,8 @@ from sqlmodel import select, func
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.session import Session, SessionSpeakerLink, SessionAttendeeLink
+from app.models.session import Session
+from app.models.links import SessionSpeakerLink, SessionAttendeeLink
 from app.schemas.session import SessionCreate, SessionUpdate
 from app.models.user import User
 
@@ -19,7 +20,15 @@ class SessionRepository:
         self.db.add(db_session)
         await self.db.commit()
         await self.db.refresh(db_session)
-        return db_session
+        
+        # Cargar relaciones explícitamente para evitar MissingGreenlet error
+        # cuando Pydantic intente acceder a .speakers (lazy loading asíncrono no soportado en este contexto)
+        statement = select(Session).where(Session.id == db_session.id).options(
+            selectinload(Session.speakers),
+            selectinload(Session.attendees)
+        )
+        result = await self.db.exec(statement)
+        return result.one()
 
     async def get_by_id(self, session_id: UUID) -> Optional[Session]:
         # Cargar relaciones puede ser útil
@@ -37,14 +46,24 @@ class SessionRepository:
         self.db.add(session)
         await self.db.commit()
         await self.db.refresh(session)
-        return session
+        
+        # Recargar con relaciones
+        statement = select(Session).where(Session.id == session.id).options(
+            selectinload(Session.speakers),
+            selectinload(Session.attendees)
+        )
+        result = await self.db.exec(statement)
+        return result.one()
 
     async def delete(self, session: Session):
         await self.db.delete(session)
         await self.db.commit()
 
     async def get_by_event(self, event_id: UUID) -> List[Session]:
-        statement = select(Session).where(Session.event_id == event_id).order_by(Session.start_time)
+        statement = select(Session).where(Session.event_id == event_id).options(
+            selectinload(Session.speakers),
+            selectinload(Session.attendees)
+        ).order_by(Session.start_time)
         result = await self.db.exec(statement)
         return list(result.all())
 

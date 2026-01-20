@@ -1,11 +1,17 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from app.utils.enums import UserRole
 from pydantic import EmailStr, ConfigDict
 from sqlmodel import Field, SQLModel, Relationship
 from sqlalchemy import DateTime, Text
+from app.models.links import SessionSpeakerLink, SessionAttendeeLink
+
+if TYPE_CHECKING:
+    from app.models.event import Event
+    from app.models.registration import EventRegistration
+    from app.models.session import Session
 
 def utc_now():
     return datetime.now(timezone.utc)
@@ -33,6 +39,10 @@ class User(SQLModel, table=True):
     # Relaciones
     organized_events: list["Event"] = Relationship(back_populates="organizer")
     registrations: list["EventRegistration"] = Relationship(back_populates="user")
+    
+    # Relaciones Sesiones
+    speaker_sessions: list["Session"] = Relationship(back_populates="speakers", link_model=SessionSpeakerLink)
+    attendee_sessions: list["Session"] = Relationship(back_populates="attendees", link_model=SessionAttendeeLink)
 
     model_config = ConfigDict(
         json_schema_extra={

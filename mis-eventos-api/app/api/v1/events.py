@@ -5,7 +5,7 @@ from uuid import UUID
 from app.database import get_db
 from app.dependencies import get_current_active_user, get_current_user, get_optional_current_user
 from app.models.user import User
-from app.schemas.event import EventCreate, EventResponse, EventUpdate
+from app.schemas.event import EventCreate, EventResponse, EventUpdate, EventListResponse
 from app.services.event_service import EventService
 from app.utils.enums import EventStatus, EventType
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Request, HTTPException
@@ -77,15 +77,15 @@ async def create_event(
 
 @router.get(
     "",
-    response_model=List[EventResponse],
+    response_model=EventListResponse,
     summary="Listar eventos",
     description="Busca y filtra eventos. Los borradores solo son visibles para sus creadores.",
 )
 async def list_events(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[Optional[User], Depends(get_optional_current_user)] = None, # Usuario opcional para ver pública
-    skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
     status: Optional[EventStatus] = None,
     event_type: Optional[EventType] = None,
     search: Optional[str] = None,
@@ -94,9 +94,10 @@ async def list_events(
     available_spots_only: bool = Query(False, description="Mostrar solo eventos con cupos disponibles"),
 ):
     service = EventService(db)
+    skip = (page - 1) * size
     return await service.list_events(
         skip=skip,
-        limit=limit,
+        limit=size,
         status_filter=status,
         event_type=event_type,
         search=search,

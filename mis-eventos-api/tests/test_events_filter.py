@@ -64,7 +64,7 @@ async def test_filter_available_spots(
     assert response.status_code == 200
     data = response.json()
     # Depending on other tests, there might be more events, but we check if our events are present
-    ids = [item["id"] for item in data]
+    ids = [item["id"] for item in data["items"]]
     assert str(event_available.id) in ids
     assert str(event_full.id) in ids
 
@@ -72,6 +72,6 @@ async def test_filter_available_spots(
     response = await client.get("/api/v1/events?available_spots_only=true")
     assert response.status_code == 200
     data = response.json()
-    ids = [item["id"] for item in data]
+    ids = [item["id"] for item in data["items"]]
     assert str(event_available.id) in ids
     assert str(event_full.id) not in ids

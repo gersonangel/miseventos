@@ -1,9 +1,13 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
 from uuid import UUID
 
-from app.utils.enums import EventStatus, EventType
 from pydantic import BaseModel, ConfigDict, Field, model_validator, HttpUrl
+
+from app.utils.enums import EventStatus, EventType
+
+if TYPE_CHECKING:
+    from app.schemas.user import UserResponse
 
 
 class EventBase(BaseModel):
@@ -79,9 +83,27 @@ class EventResponse(EventBase):
     # Campo calculado para disponibilidad
     # Cambiamos default=0 para que siempre tenga valor
     available_spots: int = Field(default=0)
+    
+    # Lista de asistentes (solo visible para admin)
+    attendees: List["UserResponse"] = []
 
     model_config = ConfigDict(from_attributes=True)
     
     
 class EventResponseWithSpots(EventResponse):
     available_spots: int
+
+
+class EventListResponse(BaseModel):
+    """Schema para respuesta paginada de eventos"""
+    total: int
+    page: int
+    size: int
+    items: List[EventResponse]
+
+
+# Esto es necesario para resolver la referencia circular en tiempo de ejecución
+# Importamos localmente para evitar el ciclo, pero ejecutamos rebuild
+from app.schemas.user import UserResponse
+EventResponse.model_rebuild()
+EventListResponse.model_rebuild()
