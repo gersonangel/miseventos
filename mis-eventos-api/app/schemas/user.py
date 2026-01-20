@@ -51,6 +51,10 @@ class UserUpdate(BaseModel):
     full_name: Optional[str] = Field(None, min_length=1, max_length=200)
     role: Optional[UserRole] = None
     is_active: Optional[bool] = None
+    biography: Optional[str] = None
+    organization: Optional[str] = Field(None, max_length=200)
+    position: Optional[str] = Field(None, max_length=100)
+    profile_picture: Optional[str] = None
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -58,6 +62,8 @@ class UserUpdate(BaseModel):
                 "full_name": "María López García",
                 "role": "organizer",
                 "is_active": True,
+                "organization": "Tech Corp",
+                "position": "CTO"
             }
         }
     )
@@ -70,6 +76,10 @@ class UserResponse(UserBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    biography: Optional[str] = None
+    organization: Optional[str] = None
+    position: Optional[str] = None
+    profile_picture: Optional[str] = None
 
     model_config = ConfigDict(
         from_attributes=True,

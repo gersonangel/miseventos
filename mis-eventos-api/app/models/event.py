@@ -43,3 +43,6 @@ class Event(SQLModel, table=True):
 
     # Relación con Asistentes (vía tabla intermedia)
     registrations: List["EventRegistration"] = Relationship(back_populates="event")
+    
+    # Relación con Sesiones
+    sessions: List["Session"] = Relationship(back_populates="event")
