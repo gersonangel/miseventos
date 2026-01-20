@@ -4,13 +4,31 @@ from uuid import UUID
 from app.database import get_db
 from app.dependencies import require_admin
 from app.models.user import User
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserResponse, UserUpdate, UserCreateAdmin
 from app.services.user_service import UserService
 from app.utils.enums import UserRole
 from fastapi import APIRouter, Depends, Query, status
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 router = APIRouter(prefix="/users", tags=["Usuarios"])
+
+
+@router.post(
+    "",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Crear usuario",
+    description="Crea un nuevo usuario con un rol específico (solo admin)",
+    dependencies=[Depends(require_admin)],
+)
+async def create_user(
+    user_data: UserCreateAdmin,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_admin)],
+):
+
+    user_service = UserService(db)
+    return await user_service.create_user(user_data, current_user)
 
 
 @router.get(

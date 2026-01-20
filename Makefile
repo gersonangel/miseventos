@@ -66,7 +66,10 @@ build-no-cache: ## Reconstruye todas las imágenes sin usar caché
 	$(COMPOSE) build --no-cache
 
 migrate: ## Ejecuta las migraciones de base de datos (Alembic)
-	$(COMPOSE) exec backend alembic upgrade head
+	$(COMPOSE) exec backend alembic upgrade heads
+
+makemigrations: ## Crea una nueva migración (Alembic). Uso: make makemigrations msg="mensaje"
+	$(COMPOSE) exec backend alembic revision --autogenerate -m "$(msg)"
 
 init-data: ## Ejecuta el script de datos iniciales (crear admin)
 	@echo "${GREEN}Ejecutando script de datos iniciales...${NC}"

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from app.models.user import User
 from app.repositories.user_repository import UserRepository
-from app.schemas.user import UserResponse, UserUpdate
+from app.schemas.user import UserResponse, UserUpdate, UserCreateAdmin
 from app.utils.enums import UserRole
 from fastapi import HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -14,6 +14,26 @@ class UserService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.user_repo = UserRepository(db)
+
+    async def create_user(
+        self, user_data: UserCreateAdmin, current_user: User
+    ) -> UserResponse:
+
+        # Verificar que el usuario actual sea admin
+        if current_user.role != UserRole.ADMIN:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo administradores pueden crear usuarios",
+            )
+
+        if await self.user_repo.exists_by_email(user_data.email):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="El email ya está registrado",
+            )
+
+        user = await self.user_repo.create(user_data, role=user_data.role)
+        return UserResponse.model_validate(user)
 
     async def get_all_users(
         self, page: int = 1, size: int = 10, role: Optional[UserRole] = None
