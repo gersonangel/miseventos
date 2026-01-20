@@ -35,6 +35,19 @@ services:
       - db
       - redis
 
+  frontend:
+    build: ./mis-eventos-web
+    command: npm run dev -- --host
+    networks:
+      - app-network
+    volumes:
+      - ./mis-eventos-web:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
 networks:
   app-network:
     driver: bridge
