@@ -4,11 +4,17 @@ from uuid import UUID
 
 from jose import JWTError, jwt
 from pwdlib import PasswordHash
+from pwdlib.hashers.argon2 import Argon2Hasher
+from pwdlib.hashers.bcrypt import BcryptHasher
 
 from app.config import settings
 
-# Contexto para hashing de contraseñas con Argon2 (recomendado por pwdlib)
-password_hash = PasswordHash.recommended()
+# Contexto para hashing de contraseñas
+# Usamos Argon2 para nuevas contraseñas, pero permitimos verificar Bcrypt (legacy)
+password_hash = PasswordHash([
+    Argon2Hasher(),
+    BcryptHasher(),
+])
 
 
 def hash_password(password: str) -> str:

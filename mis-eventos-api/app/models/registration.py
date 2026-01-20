@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, SQLModel, Relationship
+from sqlalchemy import DateTime
 
 
 def utc_now():
@@ -17,7 +18,7 @@ class EventRegistration(SQLModel, table=True):
     event_id: UUID = Field(foreign_key="events.id", index=True)
     user_id: UUID = Field(foreign_key="users.id", index=True)
     
-    registered_at: datetime = Field(default_factory=utc_now)
+    registered_at: datetime = Field(default_factory=utc_now, sa_type=DateTime(timezone=True))
     is_active: bool = Field(default=True)  # True = Confirmado, False = Cancelado
 
     # Relaciones

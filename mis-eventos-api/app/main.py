@@ -2,12 +2,20 @@ from app.api.v1 import auth, users, events
 from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="API para la gestión de eventos corporativos",
 )
+
+# Crear directorio de uploads si no existe
+os.makedirs("uploads", exist_ok=True)
+
+# Montar archivos estáticos
+app.mount("/static", StaticFiles(directory="uploads"), name="static")
 
 # Configuración CORS
 app.add_middleware(
