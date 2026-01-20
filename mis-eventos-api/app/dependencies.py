@@ -1,4 +1,4 @@
-from typing import Annotated, List
+from typing import Annotated, List, Optional
 
 from app.database import get_db
 from app.models.user import User
@@ -10,6 +10,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 # Esquema OAuth2 para obtener el token del header Authorization
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login", auto_error=False)
 
 
 async def get_current_user(
@@ -17,6 +18,17 @@ async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
 
+    auth_service = AuthService(db)
+    return await auth_service.get_current_user(token)
+
+
+async def get_optional_current_user(
+    token: Annotated[Optional[str], Depends(oauth2_scheme_optional)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> Optional[User]:
+    if not token:
+        return None
+        
     auth_service = AuthService(db)
     return await auth_service.get_current_user(token)
 

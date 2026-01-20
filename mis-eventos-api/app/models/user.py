@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 
 from app.utils.enums import UserRole
 from pydantic import EmailStr, ConfigDict
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
 def utc_now():
     return datetime.now(timezone.utc)
@@ -22,6 +22,10 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
+
+    # Relaciones
+    organized_events: list["Event"] = Relationship(back_populates="organizer")
+    registrations: list["EventRegistration"] = Relationship(back_populates="user")
 
     model_config = ConfigDict(
         json_schema_extra={

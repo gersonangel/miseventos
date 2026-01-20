@@ -1,37 +1,32 @@
-from app.api.v1 import api_router
+from app.api.v1 import auth, users, events
 from app.config import settings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# Crear aplicación FastAPI
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
-    description="API para gestión de eventos",
-    debug=settings.DEBUG,
+    description="API para la gestión de eventos corporativos",
 )
 
-# Configurar CORS
+# Configuración CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.origins_list,
+    allow_origins=["*"],  # En producción cambiar por dominios permitidos
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Incluir routers
-app.include_router(api_router, prefix="/api")
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(users.router, prefix="/api/v1")
+app.include_router(events.router, prefix="/api/v1")
 
 
-@app.get("/", tags=["Root"])
+@app.get("/")
 async def root():
-
-    return {
-        "message": f"Bienvenido a {settings.APP_NAME}",
-        "version": settings.APP_VERSION,
-        "docs": "/docs",
-    }
+    return {"message": "Bienvenido a MisEventos API"}
 
 
 @app.get("/health", tags=["Health"])
