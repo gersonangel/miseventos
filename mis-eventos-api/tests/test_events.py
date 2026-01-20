@@ -24,7 +24,9 @@ async def test_create_event_organizer(client: AsyncClient, organizer_token: str)
             "end_date": future_date(11),
             "location": "Online",
             "max_capacity": 100,
-            "event_type": "conference"
+            "event_type": "conference",
+            "image_desktop": "http://example.com/desktop.jpg",
+            "image_mobile": "http://example.com/mobile.jpg"
         },
     )
     assert response.status_code == 201
@@ -47,7 +49,9 @@ async def test_create_event_attendee_forbidden(client: AsyncClient, attendee_tok
             "end_date": future_date(11),
             "location": "Dark Web",
             "max_capacity": 10,
-            "event_type": "other"
+            "event_type": "other",
+            "image_desktop": "http://example.com/desktop.jpg",
+            "image_mobile": "http://example.com/mobile.jpg"
         },
     )
     assert response.status_code == 403
@@ -71,7 +75,9 @@ async def test_list_events_visibility(
             "end_date": future_date(6),
             "location": "Privado",
             "max_capacity": 50,
-            "event_type": "workshop"
+            "event_type": "workshop",
+            "image_desktop": "http://example.com/desktop.jpg",
+            "image_mobile": "http://example.com/mobile.jpg"
         },
     )
     assert create_resp.status_code == 201
@@ -114,7 +120,9 @@ async def test_event_registration_flow(
             "end_date": future_date(21),
             "location": "Estadio",
             "max_capacity": 2, # Cupo limitado para probar
-            "event_type": "seminar"
+            "event_type": "seminar",
+            "image_desktop": "http://example.com/desktop.jpg",
+            "image_mobile": "http://example.com/mobile.jpg"
         },
     )
     event_id = resp.json()["id"]
@@ -173,12 +181,14 @@ async def test_update_event_permissions(
         headers={"Authorization": f"Bearer {organizer_token}"},
         json={
             "title": "Original",
-            "description": "Desc",
+            "description": "Descripción suficientemente larga",
             "start_date": future_date(1),
             "end_date": future_date(2),
             "location": "Loc",
             "max_capacity": 10,
-            "event_type": "other"
+            "event_type": "other",
+            "image_desktop": "http://example.com/desktop.jpg",
+            "image_mobile": "http://example.com/mobile.jpg"
         },
     )
     event_id = resp.json()["id"]

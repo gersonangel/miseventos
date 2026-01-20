@@ -91,6 +91,7 @@ async def list_events(
     search: Optional[str] = None,
     start_date_from: Optional[datetime] = None,
     start_date_to: Optional[datetime] = None,
+    available_spots_only: bool = Query(False, description="Mostrar solo eventos con cupos disponibles"),
 ):
     service = EventService(db)
     return await service.list_events(
@@ -101,7 +102,8 @@ async def list_events(
         search=search,
         start_date_from=start_date_from,
         start_date_to=start_date_to,
-        user=current_user
+        user=current_user,
+        available_spots_only=available_spots_only,
     )
 
 

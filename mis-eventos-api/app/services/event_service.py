@@ -61,14 +61,15 @@ class EventService:
         search: Optional[str] = None,
         start_date_from: Optional[datetime] = None,
         start_date_to: Optional[datetime] = None,
-        user: Optional[User] = None
+        user: Optional[User] = None,
+        available_spots_only: bool = False,
     ) -> List[EventResponse]:
         
         # Si no es admin/organizer, forzar filtro a eventos públicos (no borradores)
         # O implementar lógica de visibilidad más compleja
         
         events = await self.event_repo.get_all(
-            skip, limit, status_filter, event_type, search, start_date_from, start_date_to
+            skip, limit, status_filter, event_type, search, start_date_from, start_date_to, available_spots_only
         )
         
         # Filtrar borradores si no es el dueño o admin (si no se filtró en query)
