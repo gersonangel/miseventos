@@ -51,7 +51,7 @@ class UserRepository:
         result = await self.db.exec(statement)
         return len(list(result.all()))
 
-    async def create(self, user_data: UserCreate) -> User:
+    async def create(self, user_data: UserCreate, role: UserRole = UserRole.ATTENDEE) -> User:
 
         hashed_password = hash_password(user_data.password)
 
@@ -59,7 +59,7 @@ class UserRepository:
             email=user_data.email,
             full_name=user_data.full_name,
             hashed_password=hashed_password,
-            role=UserRole.ATTENDEE,  # Por defecto todos son attendees
+            role=role,
             is_active=True,
         )
 

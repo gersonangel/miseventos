@@ -49,4 +49,5 @@ class RoleChecker:
 # Dependencias predefinidas para roles específicos
 require_admin = RoleChecker([UserRole.ADMIN])
 require_organizer = RoleChecker([UserRole.ADMIN, UserRole.ORGANIZER])
+require_speaker = RoleChecker([UserRole.ADMIN, UserRole.SPEAKER])
 require_authenticated = Depends(get_current_active_user)

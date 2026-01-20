@@ -28,6 +28,23 @@ class UserCreate(UserBase):
     )
 
 
+class UserCreateAdmin(UserCreate):
+    """Schema para crear Usuario por Admin (con rol)"""
+
+    role: UserRole = Field(default=UserRole.ATTENDEE)
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "email": "admin@ejemplo.com",
+                "full_name": "Admin User",
+                "password": "securepassword",
+                "role": "admin",
+            }
+        }
+    )
+
+
 class UserUpdate(BaseModel):
     """Schema para actualizar Usuario (solo admin)"""
 
