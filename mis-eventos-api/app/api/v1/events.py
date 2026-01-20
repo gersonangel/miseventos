@@ -8,10 +8,55 @@ from app.models.user import User
 from app.schemas.event import EventCreate, EventResponse, EventUpdate
 from app.services.event_service import EventService
 from app.utils.enums import EventStatus, EventType
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Request, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
+import shutil
+import os
+from uuid import uuid4
 
 router = APIRouter(prefix="/events", tags=["Eventos"])
+
+
+@router.post(
+    "/upload-image",
+    summary="Subir imagen de evento",
+    description="Sube una imagen y retorna la URL pública. (Solo Organizadores o Admin)",
+)
+async def upload_event_image(
+    request: Request,
+    file: Annotated[UploadFile, File(description="Archivo de imagen (jpg, png, webp)")],
+    current_user: Annotated[User, Depends(get_current_active_user)],
+):
+    # Validar extensión
+    if not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="El archivo debe ser una imagen"
+        )
+    
+    # Crear directorio si no existe (por seguridad)
+    os.makedirs("uploads", exist_ok=True)
+    
+    # Generar nombre único
+    filename = f"{uuid4()}_{file.filename}"
+    file_path = f"uploads/{filename}"
+    
+    # Guardar archivo
+    try:
+        contents = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(contents)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al guardar la imagen: {str(e)}"
+        )
+        
+    # Generar URL completa
+    # request.base_url retorna ej: http://localhost:8000/
+    url = f"{request.base_url}static/{filename}"
+    
+    return {"url": url}
 
 
 @router.post(

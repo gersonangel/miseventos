@@ -17,8 +17,15 @@ class EventRepository:
         self.db = db
 
     async def create(self, event_data: EventCreate, organizer_id: UUID) -> Event:
+        data = event_data.model_dump()
+        # Convertir HttpUrl a str para la base de datos
+        if "image_desktop" in data:
+            data["image_desktop"] = str(data["image_desktop"])
+        if "image_mobile" in data:
+            data["image_mobile"] = str(data["image_mobile"])
+            
         db_event = Event(
-            **event_data.model_dump(),
+            **data,
             organizer_id=organizer_id,
             status=EventStatus.DRAFT  # Inicialmente borrador
         )
@@ -32,6 +39,13 @@ class EventRepository:
 
     async def update(self, event: Event, event_update: EventUpdate) -> Event:
         event_data = event_update.model_dump(exclude_unset=True)
+        
+        # Convertir HttpUrl a str
+        if "image_desktop" in event_data:
+            event_data["image_desktop"] = str(event_data["image_desktop"])
+        if "image_mobile" in event_data:
+            event_data["image_mobile"] = str(event_data["image_mobile"])
+            
         for key, value in event_data.items():
             setattr(event, key, value)
         

@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class UserRole(str, Enum):
-
     ADMIN = "admin"
     ORGANIZER = "organizer"
     SPEAKER = "speaker"
@@ -23,4 +22,3 @@ class EventType(str, Enum):
     SEMINAR = "seminar"
     NETWORKING = "networking"
     OTHER = "other"
-

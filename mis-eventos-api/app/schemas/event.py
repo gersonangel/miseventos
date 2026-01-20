@@ -3,19 +3,19 @@ from typing import Optional
 from uuid import UUID
 
 from app.utils.enums import EventStatus, EventType
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, HttpUrl
 
 
 class EventBase(BaseModel):
     title: str = Field(min_length=3, max_length=200)
-    description: str
+    description: str = Field(min_length=10, description="Descripción detallada del evento")
     start_date: datetime
     end_date: datetime
-    location: str
+    location: str = Field(min_length=3, description="Ubicación del evento")
     max_capacity: int = Field(gt=0)
     event_type: EventType
-    image_desktop: Optional[str] = None
-    image_mobile: Optional[str] = None
+    image_desktop: HttpUrl = Field(description="URL válida de la imagen para escritorio")
+    image_mobile: HttpUrl = Field(description="URL válida de la imagen para móviles")
 
 
 class EventCreate(EventBase):
@@ -35,13 +35,15 @@ class EventCreate(EventBase):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "title": "Conferencia Tech 2024",
-                "description": "Lo mejor de la tecnología",
-                "start_date": "2024-12-01T09:00:00Z",
-                "end_date": "2024-12-01T18:00:00Z",
+                "title": "Conferencia Tech 2026",
+                "description": "Lo mejor de la tecnología en un solo lugar",
+                "start_date": "2026-01-20T09:00:00Z",
+                "end_date": "2026-01-20T18:00:00Z",
                 "location": "Auditorio Central",
                 "max_capacity": 100,
-                "event_type": "conference"
+                "event_type": "conference",
+                "image_desktop": "https://example.com/desktop.jpg",
+                "image_mobile": "https://example.com/mobile.jpg"
             }
         }
     )
@@ -49,15 +51,15 @@ class EventCreate(EventBase):
 
 class EventUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=200)
-    description: Optional[str] = None
+    description: Optional[str] = Field(None, min_length=10)
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    location: Optional[str] = None
+    location: Optional[str] = Field(None, min_length=3)
     max_capacity: Optional[int] = Field(None, gt=0)
     event_type: Optional[EventType] = None
     status: Optional[EventStatus] = None
-    image_desktop: Optional[str] = None
-    image_mobile: Optional[str] = None
+    image_desktop: Optional[HttpUrl] = None
+    image_mobile: Optional[HttpUrl] = None
 
     @model_validator(mode="after")
     def validate_dates(self) -> "EventUpdate":
