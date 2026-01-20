@@ -64,6 +64,7 @@ class EventRepository:
         search: Optional[str] = None,
         start_date_from: Optional[datetime] = None,
         start_date_to: Optional[datetime] = None,
+        available_spots_only: bool = False,
     ) -> List[Event]:
         
         statement = select(Event)
@@ -83,6 +84,18 @@ class EventRepository:
             
         if start_date_to:
             statement = statement.where(Event.start_date <= start_date_to)
+
+        if available_spots_only:
+            # Subconsulta para contar registros activos por evento
+            registrations_count = (
+                select(func.count(EventRegistration.id))
+                .where(EventRegistration.event_id == Event.id)
+                .where(EventRegistration.is_active == True)
+                .correlate(Event)
+                .scalar_subquery()
+            )
+            # Filtrar donde la capacidad máxima sea mayor que los registros
+            statement = statement.where(Event.max_capacity > registrations_count)
 
         statement = statement.offset(skip).limit(limit).order_by(Event.start_date)
         result = await self.db.exec(statement)
