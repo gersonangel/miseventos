@@ -20,12 +20,12 @@ services:
       - "6379:6379"
 
   backend:
-    build: ./backend
+    build: ./mis-eventos-api
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     networks:
       - app-network
     volumes:
-      - ./backend:/app
+      - ./mis-eventos-api:/app
     ports:
       - "8000:8000"
     environment:
@@ -34,19 +34,6 @@ services:
     depends_on:
       - db
       - redis
-
-  frontend:
-    build: ./frontend
-    command: npm run dev -- --host
-    networks:
-      - app-network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    ports:
-      - "5173:5173"
-    depends_on:
-      - backend
 
 networks:
   app-network:
@@ -57,4 +44,3 @@ networks:
 
 volumes:
   postgres_data:
-  

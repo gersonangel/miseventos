@@ -44,10 +44,10 @@ down: ## Detiene y elimina los contenedores
 restart: ## Reinicia todos los contenedores
 	$(COMPOSE) restart
 
-restart-backend: ## Reinicia solo el contenedor backend
+restart-back: ## Reinicia solo el contenedor backend
 	$(COMPOSE) restart backend
 
-restart-frontend: ## Reinicia solo el contenedor frontend
+restart-front: ## Reinicia solo el contenedor frontend
 	$(COMPOSE) restart frontend
 
 restart-db: ## Reinicia solo el contenedor de base de datos
@@ -56,10 +56,10 @@ restart-db: ## Reinicia solo el contenedor de base de datos
 build: ## Reconstruye todas las imágenes
 	$(COMPOSE) build
 
-build-backend: ## Reconstruye la imagen del backend
+build-back: ## Reconstruye la imagen del backend
 	$(COMPOSE) build backend
 
-build-frontend: ## Reconstruye la imagen del frontend
+build-front: ## Reconstruye la imagen del frontend
 	$(COMPOSE) build frontend
 
 build-no-cache: ## Reconstruye todas las imágenes sin usar caché
@@ -70,18 +70,18 @@ migrate: ## Ejecuta las migraciones de base de datos (Alembic)
 
 init-data: ## Ejecuta el script de datos iniciales (crear admin)
 	@echo "${GREEN}Ejecutando script de datos iniciales...${NC}"
-	$(COMPOSE) exec backend python app/initial_data.py
+	$(COMPOSE) exec backend env PYTHONPATH=. python scripts/init_db.py
 
-shell-backend: ## Abre una terminal en el contenedor backend
+shell-back: ## Abre una terminal en el contenedor backend
 	$(COMPOSE) exec backend /bin/bash
 
 logs: ## Muestra los logs de todos los contenedores
 	$(COMPOSE) logs -f
 
-logs-backend: ## Muestra los logs del backend
+logs-back: ## Muestra los logs del backend
 	$(COMPOSE) logs -f backend
 
-logs-frontend: ## Muestra los logs del frontend
+logs-front: ## Muestra los logs del frontend
 	$(COMPOSE) logs -f frontend
 
 test-back: ## Ejecuta los tests del backend
