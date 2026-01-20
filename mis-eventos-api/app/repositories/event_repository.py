@@ -3,10 +3,11 @@ from typing import List, Optional
 from uuid import UUID
 
 from app.models.event import Event
+from app.models.user import User
 from app.models.registration import EventRegistration
 from app.schemas.event import EventCreate, EventUpdate
 from app.utils.enums import EventStatus, EventType
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from sqlmodel import select, col
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -55,19 +56,32 @@ class EventRepository:
         await self.db.refresh(event)
         return event
 
-    async def get_all(
+    def _build_query(
         self,
-        skip: int = 0,
-        limit: int = 10,
         status: Optional[EventStatus] = None,
         event_type: Optional[EventType] = None,
         search: Optional[str] = None,
         start_date_from: Optional[datetime] = None,
         start_date_to: Optional[datetime] = None,
         available_spots_only: bool = False,
-    ) -> List[Event]:
-        
+        admin_mode: bool = False,
+        viewer_id: Optional[UUID] = None,
+    ):
         statement = select(Event)
+
+        # Filtros de Visibilidad (Seguridad)
+        if not admin_mode:
+            if viewer_id:
+                # Ver publicados O (borradores propios)
+                statement = statement.where(
+                    or_(
+                        Event.status != EventStatus.DRAFT,
+                        and_(Event.status == EventStatus.DRAFT, Event.organizer_id == viewer_id)
+                    )
+                )
+            else:
+                # Solo ver publicados (no borradores)
+                statement = statement.where(Event.status != EventStatus.DRAFT)
 
         if status:
             statement = statement.where(Event.status == status)
@@ -96,10 +110,48 @@ class EventRepository:
             )
             # Filtrar donde la capacidad máxima sea mayor que los registros
             statement = statement.where(Event.max_capacity > registrations_count)
+            
+        return statement
 
+    async def get_all(
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        status: Optional[EventStatus] = None,
+        event_type: Optional[EventType] = None,
+        search: Optional[str] = None,
+        start_date_from: Optional[datetime] = None,
+        start_date_to: Optional[datetime] = None,
+        available_spots_only: bool = False,
+        admin_mode: bool = False,
+        viewer_id: Optional[UUID] = None,
+    ) -> List[Event]:
+        
+        statement = self._build_query(
+            status, event_type, search, start_date_from, start_date_to, available_spots_only, admin_mode, viewer_id
+        )
         statement = statement.offset(skip).limit(limit).order_by(Event.start_date)
         result = await self.db.exec(statement)
         return list(result.all())
+
+    async def count(
+        self,
+        status: Optional[EventStatus] = None,
+        event_type: Optional[EventType] = None,
+        search: Optional[str] = None,
+        start_date_from: Optional[datetime] = None,
+        start_date_to: Optional[datetime] = None,
+        available_spots_only: bool = False,
+        admin_mode: bool = False,
+        viewer_id: Optional[UUID] = None,
+    ) -> int:
+        statement = self._build_query(
+            status, event_type, search, start_date_from, start_date_to, available_spots_only, admin_mode, viewer_id
+        )
+        # Usar subquery para contar los resultados filtrados
+        count_statement = select(func.count()).select_from(statement.subquery())
+        result = await self.db.exec(count_statement)
+        return result.one()
 
     async def count_registrations(self, event_id: UUID) -> int:
         statement = select(func.count()).select_from(EventRegistration).where(
@@ -129,3 +181,15 @@ class EventRepository:
         registration.is_active = False
         self.db.add(registration)
         await self.db.commit()
+
+    async def get_attendees(self, event_id: UUID) -> List[User]:
+        statement = (
+            select(User)
+            .join(EventRegistration, User.id == EventRegistration.user_id)
+            .where(
+                EventRegistration.event_id == event_id,
+                EventRegistration.is_active == True
+            )
+        )
+        result = await self.db.exec(statement)
+        return list(result.all())

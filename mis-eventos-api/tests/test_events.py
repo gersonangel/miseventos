@@ -88,7 +88,7 @@ async def test_list_events_visibility(
         headers={"Authorization": f"Bearer {organizer_token}"}
     )
     assert resp_org.status_code == 200
-    events_org = resp_org.json()
+    events_org = resp_org.json()["items"]
     assert any(e["title"] == "Borrador Secreto" for e in events_org)
 
     # 3. Asistente lista eventos (NO debe verlo)
@@ -97,7 +97,7 @@ async def test_list_events_visibility(
         headers={"Authorization": f"Bearer {attendee_token}"}
     )
     assert resp_att.status_code == 200
-    events_att = resp_att.json()
+    events_att = resp_att.json()["items"]
     assert not any(e["title"] == "Borrador Secreto" for e in events_att)
 
 

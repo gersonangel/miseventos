@@ -23,7 +23,9 @@ def get_session_service(db: AsyncSession = Depends(get_db)) -> SessionService:
         UserRepository(db)
     )
 
-@router.post("/events/{event_id}/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/events/{event_id}/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED,
+    summary="Crear sesión",
+    description="Crea una nueva sesión asociada a un evento específico. Requiere permisos de administrador u organizador. Valida que la sesión esté dentro de las fechas del evento y respete el aforo y horario.")
 async def create_session(
     event_id: UUID,
     session_data: SessionCreate,
@@ -35,21 +37,27 @@ async def create_session(
     # Nota: Idealmente verificar que el organizador sea dueño del evento
     return await service.create_session(event_id, session_data)
 
-@router.get("/events/{event_id}/sessions", response_model=List[SessionResponse])
+@router.get("/events/{event_id}/sessions", response_model=List[SessionResponse],
+    summary="Listar sesiones",
+    description="Obtiene todas las sesiones programadas para un evento específico, ordenadas por hora de inicio.")
 async def list_sessions(
     event_id: UUID,
     service: SessionService = Depends(get_session_service)
 ):
     return await service.list_sessions(event_id)
 
-@router.get("/sessions/{session_id}", response_model=SessionResponse)
+@router.get("/sessions/{session_id}", response_model=SessionResponse,
+    summary="Obtener detalles de sesión",
+    description="Recupera la información detallada de una sesión específica por su ID.")
 async def get_session(
     session_id: UUID,
     service: SessionService = Depends(get_session_service)
 ):
     return await service.get_session(session_id)
 
-@router.put("/sessions/{session_id}", response_model=SessionResponse)
+@router.put("/sessions/{session_id}", response_model=SessionResponse,
+    summary="Actualizar sesión",
+    description="Modifica los datos de una sesión existente. Requiere permisos de administrador u organizador.")
 async def update_session(
     session_id: UUID,
     session_data: SessionUpdate,
@@ -57,10 +65,12 @@ async def update_session(
     service: SessionService = Depends(get_session_service)
 ):
     if current_user.role not in [UserRole.ADMIN, UserRole.ORGANIZER]:
-         raise HTTPException(status_code=403, detail="Not authorized to update sessions")
+         raise HTTPException(status_code=403, detail="No autorizado para actualizar sesiones")
     return await service.update_session(session_id, session_data)
 
-@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar sesión",
+    description="Elimina una sesión del sistema. Requiere permisos de administrador u organizador.")
 async def delete_session(
     session_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -70,7 +80,9 @@ async def delete_session(
          raise HTTPException(status_code=403, detail="Not authorized to delete sessions")
     await service.delete_session(session_id)
 
-@router.post("/sessions/{session_id}/speakers", status_code=status.HTTP_200_OK)
+@router.post("/sessions/{session_id}/speakers", status_code=status.HTTP_200_OK,
+    summary="Asignar ponentes a sesión",
+    description="Asigna una lista de usuarios (ponentes) a una sesión. Verifica que los usuarios tengan el rol de SPEAKER y no tengan conflictos de horario.")
 async def assign_speakers(
     session_id: UUID,
     data: SpeakerAssign,
@@ -78,11 +90,13 @@ async def assign_speakers(
     service: SessionService = Depends(get_session_service)
 ):
     if current_user.role not in [UserRole.ADMIN, UserRole.ORGANIZER]:
-        raise HTTPException(status_code=403, detail="Not authorized to assign speakers")
+        raise HTTPException(status_code=403, detail="No autorizado para asignar ponentes")
     await service.assign_speakers(session_id, data.speaker_ids)
     return {"message": "Speakers assigned successfully"}
 
-@router.post("/sessions/{session_id}/join", status_code=status.HTTP_200_OK)
+@router.post("/sessions/{session_id}/join", status_code=status.HTTP_200_OK,
+    summary="Inscribirse a sesión",
+    description="Permite a un usuario autenticado inscribirse como asistente a una sesión. Verifica disponibilidad de aforo y conflictos de horario.")
 async def join_session(
     session_id: UUID,
     current_user: User = Depends(get_current_user),

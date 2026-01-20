@@ -4,7 +4,8 @@ from uuid import UUID
 
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
-from app.schemas.event import EventCreate, EventResponse, EventUpdate
+from app.schemas.event import EventCreate, EventResponse, EventUpdate, EventListResponse
+from app.schemas.user import UserResponse
 from app.utils.enums import EventStatus, EventType, UserRole
 from fastapi import HTTPException, status
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -50,6 +51,10 @@ class EventService:
         confirmed_count = await self.event_repo.count_registrations(event.id)
         response.available_spots = event.max_capacity - confirmed_count
         
+        if user and user.role == UserRole.ADMIN:
+            attendees = await self.event_repo.get_attendees(event.id)
+            response.attendees = [UserResponse.model_validate(u) for u in attendees]
+        
         return response
 
     async def list_events(
@@ -63,33 +68,66 @@ class EventService:
         start_date_to: Optional[datetime] = None,
         user: Optional[User] = None,
         available_spots_only: bool = False,
-    ) -> List[EventResponse]:
+    ) -> EventListResponse:
         
-        # Si no es admin/organizer, forzar filtro a eventos públicos (no borradores)
-        # O implementar lógica de visibilidad más compleja
+        # Determinar visibilidad
+        admin_mode = False
+        viewer_id = None
         
+        if user:
+            if user.role == UserRole.ADMIN:
+                admin_mode = True
+            viewer_id = user.id
+            
+        # Calcular total
+        total = await self.event_repo.count(
+            status=status_filter,
+            event_type=event_type,
+            search=search,
+            start_date_from=start_date_from,
+            start_date_to=start_date_to,
+            available_spots_only=available_spots_only,
+            admin_mode=admin_mode,
+            viewer_id=viewer_id
+        )
+
+        # Obtener eventos paginados
         events = await self.event_repo.get_all(
-            skip, limit, status_filter, event_type, search, start_date_from, start_date_to, available_spots_only
+            skip=skip,
+            limit=limit,
+            status=status_filter,
+            event_type=event_type,
+            search=search,
+            start_date_from=start_date_from,
+            start_date_to=start_date_to,
+            available_spots_only=available_spots_only,
+            admin_mode=admin_mode,
+            viewer_id=viewer_id
         )
         
-        # Filtrar borradores si no es el dueño o admin (si no se filtró en query)
-        visible_events = []
-        for event in events:
-            if event.status == EventStatus.DRAFT:
-                if user and (user.role == UserRole.ADMIN or event.organizer_id == user.id):
-                    visible_events.append(event)
-            else:
-                visible_events.append(event)
-
         # Enriquecer con disponibilidad
-        results = []
-        for event in visible_events:
+        items = []
+        for event in events:
             resp = EventResponse.model_validate(event)
             count = await self.event_repo.count_registrations(event.id)
             resp.available_spots = event.max_capacity - count
-            results.append(resp)
+
+            if admin_mode:
+                attendees = await self.event_repo.get_attendees(event.id)
+                resp.attendees = [UserResponse.model_validate(u) for u in attendees]
+
+            items.append(resp)
             
-        return results
+        # Calcular página actual
+        # skip = (page - 1) * size  => page = (skip / size) + 1
+        page = (skip // limit) + 1 if limit > 0 else 1
+            
+        return EventListResponse(
+            total=total,
+            page=page,
+            size=limit,
+            items=items
+        )
 
     async def update_event(
         self, event_id: UUID, event_update: EventUpdate, user: User
