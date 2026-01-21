@@ -16,7 +16,7 @@ export const Header = () => {
           />
         </Link>
         <div className="space-x-6 flex items-center">
-          <Link to="/" className="text-gray-300 hover:text-white transition-colors">
+          <Link to="/events" className="text-gray-300 hover:text-white transition-colors">
             Eventos
           </Link>
           <Link to="/my-events" className="text-gray-300 hover:text-white transition-colors">
