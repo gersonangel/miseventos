@@ -7,6 +7,7 @@ import { CreateEvent } from './pages/CreateEvent';
 import { EventDetail } from './pages/EventDetail';
 import { MyRegistrations } from './pages/MyRegistrations';
 import { Register } from './pages/Register';
+import { Home } from './pages/Home';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
 
@@ -30,10 +31,14 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Layout><EventList /></Layout>} />
+            <Route path="/" element={<Layout><Home /></Layout>} />
+            <Route path="/events" element={<Layout><EventList /></Layout>} />
             <Route path="/events/new" element={<Layout><CreateEvent /></Layout>} />
             <Route path="/events/:id" element={<Layout><EventDetail /></Layout>} />
             <Route path="/my-events" element={<Layout><MyRegistrations /></Layout>} />
+            {/* Placeholder routes for future implementation */}
+            <Route path="/users" element={<Layout><div className="text-center p-10">Gestión de Usuarios (En construcción)</div></Layout>} />
+            <Route path="/sessions" element={<Layout><div className="text-center p-10">Gestión de Sesiones (En construcción)</div></Layout>} />
           </Route>
         </Routes>
       </Router>
