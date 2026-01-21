@@ -14,6 +14,10 @@ export interface User {
   role?: UserRole;
   created_at?: string;
   updated_at?: string;
+  biography?: string;
+  organization?: string;
+  position?: string;
+  profile_picture?: string;
 }
 
 export interface UserCreateAdmin {
@@ -22,6 +26,10 @@ export interface UserCreateAdmin {
   full_name: string;
   role: UserRole;
   is_active?: boolean;
+  biography?: string;
+  organization?: string;
+  position?: string;
+  profile_picture?: string;
 }
 
 export interface UserUpdate {
@@ -30,6 +38,10 @@ export interface UserUpdate {
   role?: UserRole;
   is_active?: boolean;
   password?: string;
+  biography?: string;
+  organization?: string;
+  position?: string;
+  profile_picture?: string;
 }
 
 export interface UserListResponse {

@@ -46,6 +46,8 @@ export interface EventCreate {
   max_capacity: number;
   event_type: EventType;
   status?: EventStatus;
+  image_desktop: string;
+  image_mobile: string;
 }
 
 export type EventUpdate = Partial<EventCreate>;

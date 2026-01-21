@@ -10,6 +10,7 @@ import { EventStatus, EventType } from '../types/event';
 import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { BackButton } from '../components/ui/BackButton';
+import { STATUS_LABELS, TYPE_LABELS } from '../constants/event';
 
 export const EventList = () => {
   const { user } = useAuth();
@@ -38,19 +39,18 @@ export const EventList = () => {
 
   const statusOptions = [
     { value: '', label: 'Todos los estados' },
-    { value: EventStatus.PUBLISHED, label: 'Publicado' },
-    { value: EventStatus.DRAFT, label: 'Borrador' },
-    { value: EventStatus.CANCELLED, label: 'Cancelado' },
-    { value: EventStatus.FINISHED, label: 'Finalizado' },
+    ...Object.values(EventStatus).map(status => ({
+      value: status,
+      label: STATUS_LABELS[status]
+    }))
   ];
 
   const typeOptions = [
     { value: '', label: 'Todos los tipos' },
-    { value: EventType.CONFERENCE, label: 'Conferencia' },
-    { value: EventType.WORKSHOP, label: 'Taller' },
-    { value: EventType.SEMINAR, label: 'Seminario' },
-    { value: EventType.NETWORKING, label: 'Networking' },
-    { value: EventType.OTHER, label: 'Otro' },
+    ...Object.values(EventType).map(type => ({
+      value: type,
+      label: TYPE_LABELS[type]
+    }))
   ];
 
   const canCreateEvent = user?.role === UserRole.ADMIN || user?.role === UserRole.ORGANIZER;
@@ -59,7 +59,7 @@ export const EventList = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <div className="flex items-center gap-3">
-          <BackButton />
+          <BackButton to="/" />
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Eventos</h1>
             <p className="text-gray-500 mt-1">Explora y gestiona los próximos eventos</p>

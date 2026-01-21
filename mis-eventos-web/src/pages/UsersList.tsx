@@ -10,6 +10,7 @@ import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { useAuth } from '../context/AuthContext';
+import { eventService } from '../services/eventService';
 
 import { BackButton } from '../components/ui/BackButton';
 
@@ -36,8 +37,13 @@ export const UsersList = () => {
     password: '',
     full_name: '',
     role: UserRole.ATTENDEE,
-    is_active: true
+    is_active: true,
+    biography: '',
+    organization: '',
+    position: '',
+    profile_picture: ''
   });
+  const [uploadingProfile, setUploadingProfile] = useState(false);
 
   const { data: usersResponse, isLoading } = useUsers(page, pageSize, selectedRole || undefined);
   const createUserMutation = useCreateUser();
@@ -51,6 +57,22 @@ export const UsersList = () => {
     [UserRole.ATTENDEE]: 'ASISTENTE',
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploadingProfile(true);
+      const url = await eventService.uploadImage(file);
+      setFormData(prev => ({ ...prev, profile_picture: url }));
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      setError('Error al subir la imagen');
+    } finally {
+      setUploadingProfile(false);
+    }
+  };
+
   const handleCreate = () => {
     setError('');
     setEditingUser(null);
@@ -59,7 +81,11 @@ export const UsersList = () => {
       password: '',
       full_name: '',
       role: UserRole.ATTENDEE,
-      is_active: true
+      is_active: true,
+      biography: '',
+      organization: '',
+      position: '',
+      profile_picture: ''
     });
     setIsModalOpen(true);
   };
@@ -72,7 +98,11 @@ export const UsersList = () => {
       full_name: user.full_name || '',
       role: user.role || UserRole.ATTENDEE,
       is_active: user.is_active,
-      password: ''
+      password: '',
+      biography: user.biography || '',
+      organization: user.organization || '',
+      position: user.position || '',
+      profile_picture: user.profile_picture || ''
     });
     setIsModalOpen(true);
   };
@@ -101,6 +131,10 @@ export const UsersList = () => {
           full_name: formData.full_name,
           role: formData.role,
           is_active: formData.is_active,
+          biography: formData.biography,
+          organization: formData.organization,
+          position: formData.position,
+          profile_picture: formData.profile_picture,
         };
         if (formData.password) {
           updateData.password = formData.password;
@@ -207,7 +241,7 @@ export const UsersList = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <div className="flex items-center gap-3">
-          <BackButton />
+          <BackButton to="/" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
             <p className="text-sm text-gray-500 mt-1">Administra los usuarios del sistema</p>
@@ -294,6 +328,49 @@ export const UsersList = () => {
             value={formData.role || UserRole.ATTENDEE}
             onChange={(value) => setFormData({...formData, role: value as UserRole})}
           />
+
+          {formData.role === UserRole.SPEAKER && (
+            <>
+              <Input
+                label="Biografía"
+                type="text"
+                value={formData.biography || ''}
+                onChange={(e) => setFormData({...formData, biography: e.target.value})}
+              />
+              <Input
+                label="Organización"
+                type="text"
+                value={formData.organization || ''}
+                onChange={(e) => setFormData({...formData, organization: e.target.value})}
+              />
+              <Input
+                label="Cargo / Posición"
+                type="text"
+                value={formData.position || ''}
+                onChange={(e) => setFormData({...formData, position: e.target.value})}
+              />
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Foto de Perfil
+                </label>
+                <div className="mt-1 flex items-center space-x-4">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                    disabled={uploadingProfile}
+                  />
+                  {uploadingProfile && <span className="text-sm text-gray-500">Subiendo...</span>}
+                </div>
+                {formData.profile_picture && (
+                  <div className="mt-2">
+                    <img src={formData.profile_picture} alt="Profile Preview" className="h-20 w-20 object-cover rounded-full" />
+                  </div>
+                )}
+              </div>
+            </>
+          )}
           <div className="flex items-center pt-2">
             <input
               id="is_active"
