@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { User, AuthState } from '../types';
 import { api } from '../lib/axios';
 
@@ -10,22 +10,25 @@ interface AuthContextType extends AuthState {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    isAuthenticated: false,
-    isLoading: true,
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    const token = localStorage.getItem('token');
+    return {
+      user: null,
+      isAuthenticated: false,
+      isLoading: !!token,
+    };
   });
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      fetchUser();
-    } else {
-      setAuthState(prev => ({ ...prev, isLoading: false }));
-    }
+  const logout = useCallback(() => {
+    localStorage.removeItem('token');
+    setAuthState({
+      user: null,
+      isAuthenticated: false,
+      isLoading: false
+    });
   }, []);
 
-  const fetchUser = async () => {
+  const fetchUser = useCallback(async () => {
     try {
       const response = await api.get<User>('/auth/me');
       setAuthState({
@@ -37,22 +40,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Error fetching user', error);
       logout();
     }
-  };
+  }, [logout]);
 
-  const login = (token: string) => {
+  const login = useCallback((token: string) => {
     localStorage.setItem('token', token);
     setAuthState(prev => ({ ...prev, isLoading: true }));
     fetchUser();
-  };
+  }, [fetchUser]);
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setAuthState({
-      user: null,
-      isAuthenticated: false,
-      isLoading: false
-    });
-  };
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchUser();
+    }
+  }, [fetchUser]);
 
   return (
     <AuthContext.Provider value={{ ...authState, login, logout }}>
