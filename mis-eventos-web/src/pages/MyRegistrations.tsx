@@ -16,7 +16,7 @@ export const MyRegistrations = () => {
           const data = await registrationService.getMyRegistrations(token);
           setEvents(data);
         }
-      } catch (err) {
+      } catch {
         setError('Error al cargar inscripciones');
       } finally {
         setLoading(false);

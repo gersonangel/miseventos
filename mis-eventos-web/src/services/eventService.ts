@@ -1,13 +1,22 @@
 import { api } from '../lib/axios';
-import { Event, EventCreate } from '../types/event';
+import { Event, EventCreate, EventUpdate, EventListResponse, EventFilters } from '../types/event';
 
 export const eventService = {
-  async getEvents(): Promise<Event[]> {
-    const response = await api.get<Event[]>('/events/');
+  async getEvents(params: EventFilters = {}): Promise<EventListResponse> {
+    const { page = 1, size = 10, ...filters } = params;
+    const response = await api.get<EventListResponse>('/events/', {
+      params: {
+        page,
+        size,
+        ...filters,
+        skip: (page - 1) * size,
+        limit: size
+      }
+    });
     return response.data;
   },
 
-  async getEvent(id: number): Promise<Event> {
+  async getEvent(id: string): Promise<Event> {
     const response = await api.get<Event>(`/events/${id}`);
     return response.data;
   },
@@ -17,12 +26,20 @@ export const eventService = {
     return response.data;
   },
   
-  async updateEvent(id: number, event: Partial<EventCreate>): Promise<Event> {
+  async updateEvent(id: string, event: EventUpdate): Promise<Event> {
     const response = await api.put<Event>(`/events/${id}`, event);
     return response.data;
   },
 
-  async deleteEvent(id: number): Promise<void> {
+  async deleteEvent(id: string): Promise<void> {
     await api.delete(`/events/${id}`);
+  },
+
+  async registerForEvent(id: string): Promise<void> {
+    await api.post(`/events/${id}/register`);
+  },
+
+  async cancelRegistration(id: string): Promise<void> {
+    await api.delete(`/events/${id}/register`);
   }
 };
