@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from './Button';
+import { Select } from './Select';
 
 interface PaginationProps {
   currentPage: number;
@@ -7,6 +8,10 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
   hasNextPage?: boolean;
   hasPreviousPage?: boolean;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
+  pageSizeOptions?: number[];
+  totalItems?: number;
 }
 
 export const Pagination: React.FC<PaginationProps> = ({ 
@@ -14,11 +19,22 @@ export const Pagination: React.FC<PaginationProps> = ({
   totalPages, 
   onPageChange,
   hasNextPage,
-  hasPreviousPage
+  hasPreviousPage,
+  pageSize = 5,
+  onPageSizeChange,
+  pageSizeOptions = [5, 10, 50, 100],
+  totalItems
 }) => {
   // If no explicit hasNext/Prev, calculate from totalPages
   const canGoBack = hasPreviousPage !== undefined ? hasPreviousPage : currentPage > 1;
   const canGoForward = hasNextPage !== undefined ? hasNextPage : currentPage < totalPages;
+
+  const handlePageSizeChange = (value: string) => {
+    if (onPageSizeChange) {
+      onPageSizeChange(Number(value));
+      onPageChange(1); // Reset to first page when size changes
+    }
+  };
 
   return (
     <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
@@ -41,11 +57,28 @@ export const Pagination: React.FC<PaginationProps> = ({
         </Button>
       </div>
       <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <div>
+        <div className="flex items-center gap-4">
           <p className="text-sm text-gray-700">
-            Página <span className="font-medium">{currentPage}</span> de{' '}
-            <span className="font-medium">{totalPages || 1}</span>
+            Mostrando <span className="font-medium">{Math.min((currentPage - 1) * pageSize + 1, totalItems || totalPages * pageSize)}</span> a{' '}
+            <span className="font-medium">{Math.min(currentPage * pageSize, totalItems || totalPages * pageSize)}</span> de{' '}
+            <span className="font-medium">{totalItems || totalPages * pageSize}</span> resultados
           </p>
+          {onPageSizeChange && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Mostrar</span>
+              <div className="w-20">
+                <Select
+                  value={pageSize}
+                  onChange={handlePageSizeChange}
+                  options={pageSizeOptions.map(size => ({
+                    value: size,
+                    label: size.toString()
+                  }))}
+                />
+              </div>
+              <span className="text-sm text-gray-700">registros</span>
+            </div>
+          )}
         </div>
         <div>
           <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">

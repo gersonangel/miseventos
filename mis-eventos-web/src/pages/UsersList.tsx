@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../hooks/useUsers';
 import { User, UserRole, UserCreateAdmin, UserUpdate } from '../types';
@@ -7,6 +7,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Pagination } from '../components/ui/Pagination';
 import { Modal } from '../components/ui/Modal';
+import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { useAuth } from '../context/AuthContext';
@@ -14,8 +15,20 @@ import { useAuth } from '../context/AuthContext';
 export const UsersList = () => {
   const { user: currentUser } = useAuth();
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(() => {
+    const saved = localStorage.getItem('usersPageSize');
+    return saved ? Number(saved) : 5;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('usersPageSize', pageSize.toString());
+  }, [pageSize]);
+
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState<Partial<UserCreateAdmin>>({
     email: '',
@@ -25,7 +38,7 @@ export const UsersList = () => {
     is_active: true
   });
 
-  const { data: usersResponse, isLoading } = useUsers(page, 10, selectedRole || undefined);
+  const { data: usersResponse, isLoading } = useUsers(page, pageSize, selectedRole || undefined);
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
@@ -38,6 +51,7 @@ export const UsersList = () => {
   };
 
   const handleCreate = () => {
+    setError('');
     setEditingUser(null);
     setFormData({
       email: '',
@@ -50,6 +64,7 @@ export const UsersList = () => {
   };
 
   const handleEdit = (user: User) => {
+    setError('');
     setEditingUser(user);
     setFormData({
       email: user.email,
@@ -61,14 +76,22 @@ export const UsersList = () => {
     setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('¿Estás seguro de que deseas eliminar este usuario?')) {
-      await deleteUserMutation.mutateAsync(id);
+  const handleDelete = (user: User) => {
+    setUserToDelete(user);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (userToDelete) {
+      await deleteUserMutation.mutateAsync(userToDelete.id);
+      setIsDeleteModalOpen(false);
+      setUserToDelete(null);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     try {
       if (editingUser) {
         // Update
@@ -85,15 +108,24 @@ export const UsersList = () => {
       } else {
         // Create
         if (!formData.email || !formData.password || !formData.full_name || !formData.role) {
-          alert('Por favor completa los campos requeridos');
+          setError('Por favor completa los campos requeridos');
           return;
         }
         await createUserMutation.mutateAsync(formData as UserCreateAdmin);
       }
       setIsModalOpen(false);
-    } catch (error) {
-      console.error('Error saving user:', error);
-      alert('Error al guardar usuario');
+    } catch (err: any) {
+      console.error('Error saving user:', err);
+      if (err.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        if (Array.isArray(detail)) {
+          setError(detail.map((e: any) => e.msg).join(', '));
+        } else {
+          setError(detail);
+        }
+      } else {
+        setError('Error al guardar usuario');
+      }
     }
   };
 
@@ -147,7 +179,7 @@ export const UsersList = () => {
             Editar
           </Button>
           {currentUser?.id !== user.id && (
-             <Button variant="danger" size="sm" onClick={() => handleDelete(user.id)}>
+             <Button variant="danger" size="sm" onClick={() => handleDelete(user)}>
               Eliminar
             </Button>
           )}
@@ -159,7 +191,7 @@ export const UsersList = () => {
 
   const items = usersResponse?.items || [];
   const total = usersResponse?.total || 0;
-  const totalPages = Math.ceil(total / 10);
+  const totalPages = Math.ceil(total / pageSize);
 
   const filterRoleOptions = [
     { value: '', label: 'Todos los roles' },
@@ -210,7 +242,12 @@ export const UsersList = () => {
         <Pagination 
           currentPage={page} 
           totalPages={totalPages} 
-          onPageChange={setPage} 
+          onPageChange={setPage}
+          hasNextPage={page < totalPages}
+          hasPreviousPage={page > 1}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          totalItems={total}
         />
       )}
 
@@ -270,8 +307,26 @@ export const UsersList = () => {
               Usuario Activo
             </label>
           </div>
+          <div className="min-h-[20px] text-red-500 text-sm font-semibold">
+            {error}
+          </div>
         </form>
       </Modal>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Eliminar Usuario"
+        message={
+          <span>
+            ¿Estás seguro de que deseas eliminar al usuario <strong>{userToDelete?.full_name || userToDelete?.email}</strong>? Esta acción no se puede deshacer.
+          </span>
+        }
+        confirmText="Eliminar"
+        variant="danger"
+        isLoading={deleteUserMutation.isPending}
+      />
     </div>
   );
 };
