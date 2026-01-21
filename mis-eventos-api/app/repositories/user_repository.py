@@ -5,6 +5,7 @@ from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 from app.utils.enums import UserRole
 from app.utils.security import hash_password
+from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -43,13 +44,13 @@ class UserRepository:
 
     async def count(self, role: Optional[UserRole] = None) -> int:
 
-        statement = select(User)
+        statement = select(func.count()).select_from(User)
 
         if role:
             statement = statement.where(User.role == role)
 
         result = await self.db.exec(statement)
-        return len(list(result.all()))
+        return result.one()
 
     async def create(self, user_data: UserCreate, role: UserRole = UserRole.ATTENDEE) -> User:
 
