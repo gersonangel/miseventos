@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Event } from '../types/event';
 import { Session } from '../types/models';
-import { eventService } from '../services/eventService';
 import { sessionService } from '../services/sessionService';
 import { registrationService } from '../services/registrationService';
 
@@ -20,7 +19,6 @@ export const EventDetail = () => {
       try {
         const token = localStorage.getItem('token');
         if (token && id) {
-          const eventData = await eventService.getEvents(token); // Ideally getById
           // Since getById is not in service yet, let's filter or fix service. 
           // Note: In real implementation, add getById to service.
           // Using fetch directly for now to save a step or fix service later.
@@ -36,7 +34,7 @@ export const EventDetail = () => {
               setError('Evento no encontrado');
           }
         }
-      } catch (err) {
+      } catch {
         setError('Error al cargar detalles');
       } finally {
         setLoading(false);
@@ -55,8 +53,12 @@ export const EventDetail = () => {
         alert('¡Inscripción exitosa!');
         navigate('/my-events');
       }
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert('Ocurrió un error inesperado');
+      }
     } finally {
       setRegistering(false);
     }

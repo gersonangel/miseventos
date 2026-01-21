@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../hooks/useUsers';
 import { User, UserRole, UserCreateAdmin, UserUpdate } from '../types';
 import { Table, Column } from '../components/ui/Table';
@@ -11,6 +10,8 @@ import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { useAuth } from '../context/AuthContext';
+
+import { BackButton } from '../components/ui/BackButton';
 
 export const UsersList = () => {
   const { user: currentUser } = useAuth();
@@ -114,11 +115,13 @@ export const UsersList = () => {
         await createUserMutation.mutateAsync(formData as UserCreateAdmin);
       }
       setIsModalOpen(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error('Error saving user:', err);
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
         if (Array.isArray(detail)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setError(detail.map((e: any) => e.msg).join(', '));
         } else {
           setError(detail);
@@ -204,11 +207,7 @@ export const UsersList = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <div className="flex items-center gap-3">
-          <Link to="/" className="p-2 rounded-full hover:bg-gray-100 text-gray-500 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-          </Link>
+          <BackButton />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Gestión de Usuarios</h1>
             <p className="text-sm text-gray-500 mt-1">Administra los usuarios del sistema</p>

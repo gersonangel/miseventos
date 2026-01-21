@@ -39,11 +39,13 @@ export const Register = () => {
       });
 
       navigate('/login');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       console.error(err);
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
         if (Array.isArray(detail)) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           setError(detail.map((e: any) => e.msg).join(', '));
         } else {
           setError(detail);
