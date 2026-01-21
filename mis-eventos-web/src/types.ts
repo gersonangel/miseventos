@@ -6,12 +6,37 @@ export enum UserRole {
 }
 
 export interface User {
-  id: number;
+  id: string; // Changed to string (UUID)
   email: string;
   full_name?: string;
   is_active: boolean;
   is_superuser: boolean;
-  role?: UserRole; // Optional initially to avoid breaking if backend doesn't send it yet, but goal is to use it
+  role?: UserRole;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UserCreateAdmin {
+  email: string;
+  password: string;
+  full_name: string;
+  role: UserRole;
+  is_active?: boolean;
+}
+
+export interface UserUpdate {
+  email?: string;
+  full_name?: string;
+  role?: UserRole;
+  is_active?: boolean;
+  password?: string;
+}
+
+export interface UserListResponse {
+  items: User[];
+  total: number;
+  page: number;
+  size: number;
 }
 
 export interface AuthState {
