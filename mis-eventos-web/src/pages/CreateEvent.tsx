@@ -1,9 +1,14 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useCreateEvent } from '../hooks/useEvents';
+import { eventService } from '../services/eventService';
 import { EventStatus, EventType } from '../types/event';
+import { TYPE_LABELS } from '../constants/event';
+import { Select } from '../components/ui/Select';
+import { BackButton } from '../components/ui/BackButton';
 
 const eventSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
@@ -14,6 +19,8 @@ const eventSchema = z.object({
   max_capacity: z.coerce.number().min(1, 'La capacidad debe ser al menos 1'),
   event_type: z.nativeEnum(EventType, { errorMap: () => ({ message: 'Selecciona un tipo de evento válido' }) }),
   status: z.nativeEnum(EventStatus).optional().default(EventStatus.DRAFT),
+  image_desktop: z.string().url('URL de imagen de escritorio requerida'),
+  image_mobile: z.string().url('URL de imagen móvil requerida'),
 }).refine(data => new Date(data.end_date) > new Date(data.start_date), {
   message: "La fecha de fin debe ser posterior a la de inicio",
   path: ["end_date"],
@@ -24,18 +31,47 @@ type EventFormValues = z.infer<typeof eventSchema>;
 export const CreateEvent = () => {
   const navigate = useNavigate();
   const createEventMutation = useCreateEvent();
+  const [uploadingDesktop, setUploadingDesktop] = useState(false);
+  const [uploadingMobile, setUploadingMobile] = useState(false);
   
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<EventFormValues>({
+  const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
     defaultValues: {
       status: EventStatus.DRAFT,
       max_capacity: 100,
-      event_type: EventType.CONFERENCE
+      event_type: EventType.CONFERENCE,
+      image_desktop: '',
+      image_mobile: ''
     }
   });
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image_desktop' | 'image_mobile') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      if (field === 'image_desktop') setUploadingDesktop(true);
+      else setUploadingMobile(true);
+
+      const url = await eventService.uploadImage(file);
+      setValue(field, url, { shouldValidate: true });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('Error al subir la imagen');
+    } finally {
+      if (field === 'image_desktop') setUploadingDesktop(false);
+      else setUploadingMobile(false);
+    }
+  };
+
   const onSubmit = (data: EventFormValues) => {
-    createEventMutation.mutate(data, {
+    const formattedData = {
+      ...data,
+      start_date: new Date(data.start_date).toISOString(),
+      end_date: new Date(data.end_date).toISOString(),
+    };
+
+    createEventMutation.mutate(formattedData, {
       onSuccess: () => {
         navigate('/events');
       },
@@ -47,7 +83,10 @@ export const CreateEvent = () => {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6 text-gray-900">Crear Nuevo Evento</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <BackButton to="/events" />
+        <h1 className="text-3xl font-bold text-gray-900">Crear Nuevo Evento</h1>
+      </div>
       
       {createEventMutation.isError && (
         <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">
@@ -120,30 +159,59 @@ export const CreateEvent = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Tipo de Evento</label>
-            <select
-              {...register('event_type')}
-              className={`mt-1 block w-full rounded-md border shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 ${errors.event_type ? 'border-red-300' : 'border-gray-300'}`}
-            >
-              <option value={EventType.CONFERENCE}>Conferencia</option>
-              <option value={EventType.WORKSHOP}>Taller</option>
-              <option value={EventType.SEMINAR}>Seminario</option>
-              <option value={EventType.NETWORKING}>Networking</option>
-              <option value={EventType.OTHER}>Otro</option>
-            </select>
-            {errors.event_type && <p className="mt-1 text-sm text-red-600">{errors.event_type.message}</p>}
+            <label className="block text-sm font-medium text-gray-700">Imagen Desktop</label>
+            <div className="mt-1 flex items-center space-x-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'image_desktop')}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                disabled={uploadingDesktop}
+              />
+              {uploadingDesktop && <span className="text-sm text-gray-500">Subiendo...</span>}
+            </div>
+            {watch('image_desktop') && (
+              <div className="mt-2">
+                <img src={watch('image_desktop')} alt="Preview Desktop" className="h-20 w-auto object-cover rounded" />
+              </div>
+            )}
+            <input type="hidden" {...register('image_desktop')} />
+            {errors.image_desktop && <p className="mt-1 text-sm text-red-600">{errors.image_desktop.message}</p>}
           </div>
+
           <div>
-            <label className="block text-sm font-medium text-gray-700">Estado</label>
-            <select
-              {...register('status')}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 border p-2"
-            >
-              <option value={EventStatus.DRAFT}>Borrador</option>
-              <option value={EventStatus.PUBLISHED}>Publicado</option>
-              <option value={EventStatus.CANCELLED}>Cancelado</option>
-            </select>
+            <label className="block text-sm font-medium text-gray-700">Imagen Mobile</label>
+            <div className="mt-1 flex items-center space-x-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, 'image_mobile')}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                disabled={uploadingMobile}
+              />
+              {uploadingMobile && <span className="text-sm text-gray-500">Subiendo...</span>}
+            </div>
+            {watch('image_mobile') && (
+              <div className="mt-2">
+                <img src={watch('image_mobile')} alt="Preview Mobile" className="h-20 w-auto object-cover rounded" />
+              </div>
+            )}
+            <input type="hidden" {...register('image_mobile')} />
+            {errors.image_mobile && <p className="mt-1 text-sm text-red-600">{errors.image_mobile.message}</p>}
           </div>
+        </div>
+
+        <div>
+          <Select
+            label="Tipo de Evento"
+            value={watch('event_type')}
+            onChange={(val) => setValue('event_type', val as EventType, { shouldValidate: true })}
+            options={Object.values(EventType).map((type) => ({
+              value: type,
+              label: TYPE_LABELS[type]
+            }))}
+            error={errors.event_type?.message}
+          />
         </div>
 
         <div className="pt-4">

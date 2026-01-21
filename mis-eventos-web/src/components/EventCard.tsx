@@ -1,22 +1,14 @@
 import { Link } from 'react-router-dom';
-import { Event, EventStatus, EventType } from '../types/event';
+import { Event, EventStatus } from '../types/event';
 import { Badge } from './ui/Badge';
+import { formatDate } from '../utils/format';
+import { STATUS_LABELS, TYPE_LABELS } from '../constants/event';
 
 interface EventCardProps {
   event: Event;
 }
 
 export const EventCard = ({ event }: EventCardProps) => {
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const getStatusVariant = (status: EventStatus) => {
     switch (status) {
       case EventStatus.PUBLISHED: return 'success';
@@ -25,17 +17,6 @@ export const EventCard = ({ event }: EventCardProps) => {
       case EventStatus.FINISHED: return 'info';
       default: return 'gray';
     }
-  };
-
-  const getTypeLabel = (type: EventType) => {
-    const labels: Record<EventType, string> = {
-      [EventType.CONFERENCE]: 'Conferencia',
-      [EventType.WORKSHOP]: 'Taller',
-      [EventType.SEMINAR]: 'Seminario',
-      [EventType.NETWORKING]: 'Networking',
-      [EventType.OTHER]: 'Otro',
-    };
-    return labels[type] || type;
   };
 
   return (
@@ -68,15 +49,12 @@ export const EventCard = ({ event }: EventCardProps) => {
         )}
         <div className="absolute top-2 right-2">
           <Badge variant={getStatusVariant(event.status)}>
-            {event.status === EventStatus.PUBLISHED ? 'PUBLICADO' :
-             event.status === EventStatus.DRAFT ? 'BORRADOR' :
-             event.status === EventStatus.CANCELLED ? 'CANCELADO' :
-             'FINALIZADO'}
+            {STATUS_LABELS[event.status]}
           </Badge>
         </div>
         <div className="absolute top-2 left-2">
            <Badge variant="info" className="bg-white/90 backdrop-blur-sm text-indigo-700">
-            {getTypeLabel(event.event_type)}
+            {TYPE_LABELS[event.event_type]}
           </Badge>
         </div>
       </div>
