@@ -74,6 +74,15 @@ run-front-prod: ## Ejecuta el contenedor de producción del frontend en puerto 8
 stop-front-prod: ## Detiene el contenedor de producción del frontend
 	$(CONTAINER_TOOL) stop mis-eventos-prod
 
+build-back-prod: ## Construye la imagen de producción del backend
+	$(CONTAINER_TOOL) build -f mis-eventos-api/Dockerfile.prod -t mis-eventos-api:prod ./mis-eventos-api
+
+run-back-prod: ## Ejecuta el contenedor de producción del backend en puerto 8000
+	$(CONTAINER_TOOL) run -d -p 8000:8000 --env-file mis-eventos-api/.env --name mis-eventos-api mis-eventos-api:prod
+
+stop-back-prod: ## Detiene y elimina el contenedor de producción del backend
+	$(CONTAINER_TOOL) stop mis-eventos-api
+
 build-no-cache: ## Reconstruye todas las imágenes sin usar caché
 	$(COMPOSE) build --no-cache
 
@@ -83,7 +92,7 @@ migrate: ## Ejecuta las migraciones de base de datos (Alembic)
 makemigrations: ## Crea una nueva migración (Alembic). Uso: make makemigrations msg="mensaje"
 	$(COMPOSE) exec backend alembic revision --autogenerate -m "$(msg)"
 
-init-data: ## Ejecuta el script de datos iniciales (crear admin)
+init-admin: ## Ejecuta el script de datos iniciales (crear admin)
 	@echo "${GREEN}Ejecutando script de datos iniciales...${NC}"
 	$(COMPOSE) exec backend env PYTHONPATH=. python scripts/init_db.py
 
