@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Event, EventStatus } from '../types/event';
 import { Badge } from './ui/Badge';
 import { formatDate } from '../utils/format';
@@ -9,6 +9,7 @@ interface EventCardProps {
 }
 
 export const EventCard = ({ event }: EventCardProps) => {
+  const location = useLocation();
   const getStatusVariant = (status: EventStatus) => {
     switch (status) {
       case EventStatus.PUBLISHED: return 'success';
@@ -83,10 +84,21 @@ export const EventCard = ({ event }: EventCardProps) => {
             </svg>
             <span>Cupos: {event.available_spots} / {event.max_capacity}</span>
           </div>
+          {location.pathname.startsWith('/my-events') && (
+            <div className="mt-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                event.is_registered 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-gray-100 text-gray-800'
+              }`}>
+                {event.is_registered ? 'Registrado' : 'Sin Registrar'}
+              </span>
+            </div>
+          )}
         </div>
 
         <Link 
-          to={`/events/${event.id}`}
+          to={location.pathname.startsWith('/my-events') ? `/my-events/${event.id}` : `/events/${event.id}`}
           className="block w-full text-center bg-indigo-50 text-indigo-600 py-2 rounded-md hover:bg-indigo-100 transition-colors font-medium"
         >
           Ver Detalles

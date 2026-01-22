@@ -86,6 +86,9 @@ class EventResponse(EventBase):
     
     # Lista de asistentes (solo visible para admin)
     attendees: List["UserResponse"] = []
+    
+    # Indica si el usuario actual está registrado
+    is_registered: bool = False
 
     model_config = ConfigDict(from_attributes=True)
     

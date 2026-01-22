@@ -50,6 +50,12 @@ class EventService:
         # Calcular cupos disponibles
         confirmed_count = await self.event_repo.count_registrations(event.id)
         response.available_spots = event.max_capacity - confirmed_count
+
+        # Verificar si está registrado
+        if user:
+            existing_registration = await self.event_repo.get_registration(event.id, user.id)
+            if existing_registration:
+                response.is_registered = True
         
         if user and user.role == UserRole.ADMIN:
             attendees = await self.event_repo.get_attendees(event.id)
@@ -105,12 +111,21 @@ class EventService:
             viewer_id=viewer_id
         )
         
-        # Enriquecer con disponibilidad
+        # Obtener inscripciones del usuario si aplica
+        user_registered_event_ids = []
+        if user:
+            user_registered_event_ids = await self.event_repo.get_user_event_ids(user.id)
+        
+        # Enriquecer con disponibilidad y registro
         items = []
         for event in events:
             resp = EventResponse.model_validate(event)
             count = await self.event_repo.count_registrations(event.id)
             resp.available_spots = event.max_capacity - count
+            
+            # Marcar si está registrado
+            if user and event.id in user_registered_event_ids:
+                resp.is_registered = True
 
             if admin_mode:
                 attendees = await self.event_repo.get_attendees(event.id)

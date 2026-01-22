@@ -79,7 +79,10 @@ class UserRepository:
         user_data_dict = user_data.model_dump(exclude_unset=True)
         
         # Si se actualiza la contraseña, hay que hashearla
-        # Nota: UserUpdate en schemas/user.py no tiene password, es UserBase.
+        if "password" in user_data_dict:
+            password = user_data_dict.pop("password")
+            if password:
+                user_data_dict["hashed_password"] = hash_password(password)
 
         for key, value in user_data_dict.items():
             setattr(db_user, key, value)

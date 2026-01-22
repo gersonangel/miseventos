@@ -12,7 +12,12 @@ import { UserRole } from '../types';
 import { BackButton } from '../components/ui/BackButton';
 import { STATUS_LABELS, TYPE_LABELS } from '../constants/event';
 
-export const EventList = () => {
+interface EventListProps {
+  hideCreateButton?: boolean;
+  fixedStatus?: EventStatus;
+}
+
+export const EventList = ({ hideCreateButton, fixedStatus }: EventListProps = {}) => {
   const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
@@ -20,7 +25,7 @@ export const EventList = () => {
     return saved ? Number(saved) : 6;
   });
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState<EventStatus | ''>('');
+  const [status, setStatus] = useState<EventStatus | ''>(fixedStatus || '');
   const [eventType, setEventType] = useState<EventType | ''>('');
 
   // Debounce search could be added here for optimization
@@ -65,7 +70,7 @@ export const EventList = () => {
             <p className="text-gray-500 mt-1">Explora y gestiona los próximos eventos</p>
           </div>
         </div>
-        {canCreateEvent && (
+        {canCreateEvent && !hideCreateButton && (
           <Link to="/events/new">
             <Button>Crear Evento</Button>
           </Link>
@@ -82,14 +87,16 @@ export const EventList = () => {
               setPage(1);
             }}
           />
-          <Select
-            options={statusOptions}
-            value={status}
-            onChange={(val) => {
-              setStatus(val as EventStatus);
-              setPage(1);
-            }}
-          />
+          {!fixedStatus && (
+            <Select
+              options={statusOptions}
+              value={status}
+              onChange={(val) => {
+                setStatus(val as EventStatus);
+                setPage(1);
+              }}
+            />
+          )}
           <Select
             options={typeOptions}
             value={eventType}

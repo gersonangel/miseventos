@@ -134,6 +134,15 @@ class EventRepository:
         result = await self.db.exec(statement)
         return list(result.all())
 
+    async def get_user_event_ids(self, user_id: UUID) -> List[UUID]:
+        """Obtiene los IDs de eventos donde el usuario está registrado"""
+        statement = select(EventRegistration.event_id).where(
+            EventRegistration.user_id == user_id,
+            EventRegistration.is_active == True
+        )
+        result = await self.db.exec(statement)
+        return list(result.all())
+
     async def count(
         self,
         status: Optional[EventStatus] = None,
