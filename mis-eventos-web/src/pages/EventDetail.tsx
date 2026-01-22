@@ -195,12 +195,36 @@ export const EventDetail = () => {
               <h3 className="text-lg font-semibold">{session.title}</h3>
               <p className="text-gray-600">{session.description}</p>
               <p className="text-sm text-gray-500 mt-2">
-                {new Date(session.start_time).toLocaleTimeString()} - {new Date(session.end_time).toLocaleTimeString()}
+                {new Date(session.start_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true})} - {new Date(session.end_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true})}
               </p>
               {session.speakers && session.speakers.length > 0 && (
-                <p className="text-sm font-medium text-indigo-600 mt-1">
-                  Ponentes: {session.speakers.map(s => s.full_name).join(', ')}
-                </p>
+                <div className="mt-4 border-t pt-4">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-3">Ponentes</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {session.speakers.map(speaker => (
+                      <div key={speaker.id} className="flex items-start space-x-3">
+                        <img
+                          className="h-10 w-10 rounded-full object-cover border border-gray-200"
+                          src={speaker.profile_picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(speaker.full_name)}&background=random`}
+                          alt={speaker.full_name}
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">{speaker.full_name}</p>
+                          {(speaker.position || speaker.organization) && (
+                            <p className="text-xs text-gray-500">
+                              {[speaker.position, speaker.organization].filter(Boolean).join(' en ')}
+                            </p>
+                          )}
+                          {speaker.biography && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2" title={speaker.biography}>
+                              {speaker.biography}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           ))}

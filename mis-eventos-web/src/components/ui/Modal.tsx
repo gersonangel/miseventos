@@ -37,7 +37,7 @@ export const Modal: React.FC<ModalProps> = ({
           <div className={`relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 w-full ${maxWidthClasses[maxWidth]}`}>
             <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 rounded-t-lg">
               <div className="sm:flex sm:items-start">
-                <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                <div className="mt-3 text-center sm:ml-4 sm:mr-4 sm:mt-0 sm:text-left w-full">
                   <h3 className="text-lg font-bold leading-6 text-gray-900 mb-4" id="modal-title">
                     {title}
                   </h3>
@@ -48,7 +48,7 @@ export const Modal: React.FC<ModalProps> = ({
               </div>
             </div>
             {(footer) && (
-              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 rounded-b-lg">
+              <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 sm:ml-4 sm:mr-4 rounded-b-lg">
                 {footer}
               </div>
             )}
