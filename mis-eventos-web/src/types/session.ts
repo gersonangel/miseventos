@@ -3,6 +3,9 @@ export interface Speaker {
   full_name: string;
   email: string;
   profile_picture?: string;
+  biography?: string;
+  organization?: string;
+  position?: string;
 }
 
 export interface Session {
@@ -24,4 +27,17 @@ export interface SessionCreate {
   end_time: string;
   location: string;
   capacity: number;
+}
+
+export interface SessionUpdate {
+  title?: string;
+  description?: string;
+  start_time?: string;
+  end_time?: string;
+  location?: string;
+  capacity?: number;
+}
+
+export interface SessionSpeakerUpdate {
+  speaker_ids: string[];
 }
