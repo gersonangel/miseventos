@@ -27,7 +27,7 @@ describe('Register Page', () => {
 
   const renderRegister = () => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Register />
       </MemoryRouter>
     );
@@ -75,6 +75,7 @@ describe('Register Page', () => {
   });
 
   it('handles registration error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     renderRegister();
     
     const errorResponse = { 

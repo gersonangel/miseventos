@@ -23,7 +23,7 @@ vi.mock('../components/DashboardCard', () => ({
 describe('Home Page', () => {
   const renderHome = () => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Home />
       </MemoryRouter>
     );

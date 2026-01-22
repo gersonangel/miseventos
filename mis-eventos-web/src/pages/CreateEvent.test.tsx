@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CreateEvent } from './CreateEvent';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { eventService } from '../services/eventService';
 import { useCreateEvent } from '../hooks/useEvents';
@@ -39,9 +39,9 @@ describe('CreateEvent Page', () => {
 
   const renderCreateEvent = () => {
     return render(
-      <BrowserRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <CreateEvent />
-      </BrowserRouter>
+      </MemoryRouter>
     );
   };
 
@@ -121,6 +121,7 @@ describe('CreateEvent Page', () => {
   });
 
   it('handles image upload error', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     (eventService.uploadImage as any).mockRejectedValue(new Error('Upload failed'));
     const { container } = renderCreateEvent();
     
@@ -133,6 +134,8 @@ describe('CreateEvent Page', () => {
         expect(screen.getByText('Error de carga')).toBeInTheDocument();
         expect(screen.getByText('Error al subir la imagen. Por favor intenta nuevamente.')).toBeInTheDocument();
     });
+    
+    consoleSpy.mockRestore();
   });
 
   it('handles form submission success', async () => {
@@ -181,6 +184,7 @@ describe('CreateEvent Page', () => {
   });
 
   it('handles form submission error', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     // Mock mutation error
     mockMutate.mockImplementation((_data, { onError }) => {
         onError(new Error('Creation failed'));
@@ -207,5 +211,7 @@ describe('CreateEvent Page', () => {
         expect(screen.getByText('Error de Creación')).toBeInTheDocument();
         expect(screen.getByText('Creation failed')).toBeInTheDocument();
     });
+    
+    consoleSpy.mockRestore();
   });
 });

@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { BackButton } from './BackButton';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 
 // Mock useNavigate
 const mockNavigate = vi.fn();
@@ -16,9 +16,9 @@ vi.mock('react-router-dom', async () => {
 describe('BackButton', () => {
   it('renders as a link when "to" prop is provided', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <BackButton to="/home" />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     
     const link = screen.getByRole('link');
@@ -27,9 +27,9 @@ describe('BackButton', () => {
 
   it('renders as a button when "to" prop is missing', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <BackButton />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     
     expect(screen.getByRole('button')).toBeInTheDocument();
@@ -37,9 +37,9 @@ describe('BackButton', () => {
 
   it('calls navigate(-1) when clicked as button', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <BackButton />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     
     fireEvent.click(screen.getByRole('button'));
@@ -48,9 +48,9 @@ describe('BackButton', () => {
 
   it('accepts custom className', () => {
     render(
-      <BrowserRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <BackButton className="custom-class" />
-      </BrowserRouter>
+      </MemoryRouter>
     );
     
     expect(screen.getByRole('button')).toHaveClass('custom-class');

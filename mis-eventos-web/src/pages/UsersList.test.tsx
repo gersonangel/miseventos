@@ -74,6 +74,10 @@ describe('UsersList Page', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCreateUser.mockReset();
+    mockUpdateUser.mockReset();
+    mockDeleteUser.mockReset();
+
     (useAuth as any).mockReturnValue({ user: mockUser });
     (useUsers as any).mockReturnValue({ data: mockUsersData, isLoading: false });
     (useCreateUser as any).mockReturnValue({ mutateAsync: mockCreateUser, isPending: false });
@@ -83,7 +87,7 @@ describe('UsersList Page', () => {
 
   const renderUsersList = () => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <UsersList />
       </MemoryRouter>
     );
@@ -416,6 +420,7 @@ describe('UsersList Page', () => {
   });
 
   it('handles API errors', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockCreateUser.mockRejectedValue({
         response: {
             data: {
@@ -446,6 +451,7 @@ describe('UsersList Page', () => {
     await waitFor(() => {
         expect(screen.getByText('Email already exists')).toBeInTheDocument();
     });
+    consoleSpy.mockRestore();
   });
 
   it('creates speaker user with all fields', async () => {

@@ -35,7 +35,7 @@ describe('EventList Page', () => {
 
   const renderEventList = (props = {}) => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventList {...props} />
       </MemoryRouter>
     );
