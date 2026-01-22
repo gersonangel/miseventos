@@ -3,12 +3,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import { useCreateEvent } from '../hooks/useEvents';
 import { eventService } from '../services/eventService';
 import { EventStatus, EventType } from '../types/event';
 import { TYPE_LABELS } from '../constants/event';
 import { Select } from '../components/ui/Select';
 import { BackButton } from '../components/ui/BackButton';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 
 const eventSchema = z.object({
   title: z.string().min(3, 'El título debe tener al menos 3 caracteres'),
@@ -33,6 +36,25 @@ export const CreateEvent = () => {
   const createEventMutation = useCreateEvent();
   const [uploadingDesktop, setUploadingDesktop] = useState(false);
   const [uploadingMobile, setUploadingMobile] = useState(false);
+  const [responseModal, setResponseModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    isError?: boolean;
+    onClose?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    isError: false,
+  });
+
+  const closeResponseModal = () => {
+    setResponseModal(prev => ({ ...prev, isOpen: false }));
+    if (responseModal.onClose) {
+      responseModal.onClose();
+    }
+  };
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<EventFormValues>({
     resolver: zodResolver(eventSchema),
@@ -57,7 +79,12 @@ export const CreateEvent = () => {
       setValue(field, url, { shouldValidate: true });
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Error al subir la imagen');
+      setResponseModal({
+        isOpen: true,
+        title: 'Error de carga',
+        message: 'Error al subir la imagen. Por favor intenta nuevamente.',
+        isError: true
+      });
     } finally {
       if (field === 'image_desktop') setUploadingDesktop(false);
       else setUploadingMobile(false);
@@ -73,10 +100,29 @@ export const CreateEvent = () => {
 
     createEventMutation.mutate(formattedData, {
       onSuccess: () => {
-        navigate('/events');
+        setResponseModal({
+          isOpen: true,
+          title: 'Evento Creado',
+          message: 'El evento se ha creado exitosamente.',
+          isError: false,
+          onClose: () => navigate('/events')
+        });
       },
       onError: (error) => {
         console.error('Error creating event:', error);
+        let errorMessage = 'Ocurrió un error al crear el evento.';
+        if (error instanceof AxiosError && error.response?.data?.detail) {
+          errorMessage = error.response.data.detail;
+        } else if (error instanceof Error) {
+          errorMessage = error.message;
+        }
+        
+        setResponseModal({
+          isOpen: true,
+          title: 'Error de Creación',
+          message: errorMessage,
+          isError: true
+        });
       }
     });
   };
@@ -88,12 +134,6 @@ export const CreateEvent = () => {
         <h1 className="text-3xl font-bold text-gray-900">Crear Nuevo Evento</h1>
       </div>
       
-      {createEventMutation.isError && (
-        <div className="bg-red-50 text-red-700 p-4 rounded-md mb-6">
-          Ocurrió un error al crear el evento. Por favor intenta nuevamente.
-        </div>
-      )}
-
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <div>
           <label className="block text-sm font-medium text-gray-700">Título</label>
@@ -224,6 +264,23 @@ export const CreateEvent = () => {
           </button>
         </div>
       </form>
+
+      <Modal
+        isOpen={responseModal.isOpen}
+        onClose={closeResponseModal}
+        title={responseModal.title}
+        footer={
+          <div className="flex justify-end">
+            <Button onClick={closeResponseModal} variant={responseModal.isError ? 'danger' : 'primary'}>
+              Cerrar
+            </Button>
+          </div>
+        }
+      >
+        <p className={`text-sm ${responseModal.isError ? 'text-red-600' : 'text-gray-600'}`}>
+          {responseModal.message}
+        </p>
+      </Modal>
     </div>
   );
 };

@@ -55,6 +55,7 @@ class UserUpdate(BaseModel):
     organization: Optional[str] = Field(None, max_length=200)
     position: Optional[str] = Field(None, max_length=100)
     profile_picture: Optional[str] = None
+    password: Optional[str] = Field(None, min_length=8, max_length=100)
 
     model_config = ConfigDict(
         json_schema_extra={

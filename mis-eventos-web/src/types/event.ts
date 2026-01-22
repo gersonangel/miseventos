@@ -28,6 +28,7 @@ export interface Event {
   created_at: string;
   updated_at: string;
   available_spots: number; // Campo calculado
+  is_registered?: boolean; // Indica si el usuario actual está registrado
 }
 
 export interface EventListResponse {

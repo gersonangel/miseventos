@@ -16,13 +16,16 @@ endif
 # Lógica de selección
 ifneq ($(CHECK_PODMAN),)
     COMPOSE := podman compose
+    CONTAINER_TOOL := podman
     MSG := "Usando Podman Compose"
 else ifneq ($(CHECK_DOCKER),)
     COMPOSE := docker compose
+    CONTAINER_TOOL := docker
     MSG := "Usando Docker Compose"
 else
     # Fallback por defecto si no se detecta ninguno (o si 'podman-compose' es el comando directo)
     COMPOSE := podman compose
+    CONTAINER_TOOL := podman
     MSG := "No se detectó 'podman' ni 'docker' comandos base, intentando 'podman-compose'"
 endif
 
@@ -61,6 +64,15 @@ build-back: ## Reconstruye la imagen del backend
 
 build-front: ## Reconstruye la imagen del frontend
 	$(COMPOSE) build frontend
+
+build-front-prod: ## Construye la imagen de producción del frontend (Nginx)
+	$(CONTAINER_TOOL) build -f mis-eventos-web/Dockerfile.prod -t mis-eventos-web-prod ./mis-eventos-web
+
+run-front-prod: ## Ejecuta el contenedor de producción del frontend en puerto 8080
+	$(CONTAINER_TOOL) run --rm -p 8080:80 --name mis-eventos-prod mis-eventos-web-prod
+
+stop-front-prod: ## Detiene el contenedor de producción del frontend
+	$(CONTAINER_TOOL) stop mis-eventos-prod
 
 build-no-cache: ## Reconstruye todas las imágenes sin usar caché
 	$(COMPOSE) build --no-cache

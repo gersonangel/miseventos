@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import { eventService } from '../services/eventService';
 import { sessionService } from '../services/sessionService';
 import { formatDate } from '../utils/format';
@@ -12,15 +13,46 @@ import { UserRole } from '../types';
 import { EventStatus } from '../types/event';
 import { STATUS_LABELS } from '../constants/event';
 
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
+
 export const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [registering, setRegistering] = useState(false);
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  
+  // States for cancellation
+  const [canceling, setCanceling] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [pendingStatus, setPendingStatus] = useState<EventStatus | null>(null);
+  
+  // New state for response messages
+  const [responseModal, setResponseModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    isError?: boolean;
+    onClose?: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    isError: false,
+  });
+
+  const closeResponseModal = () => {
+    setResponseModal(prev => ({ ...prev, isOpen: false }));
+    if (responseModal.onClose) {
+      responseModal.onClose();
+    }
+  };
 
   const { data: event, isLoading: eventLoading, error: eventError } = useQuery({
     queryKey: ['event', id],
@@ -42,7 +74,16 @@ export const EventDetail = () => {
     },
     onError: (error) => {
       console.error('Error updating status:', error);
-      alert('Error al actualizar el estado');
+      let errorMessage = 'Error al actualizar el estado';
+      if (error instanceof AxiosError && error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      }
+      setResponseModal({
+        isOpen: true,
+        title: 'Error',
+        message: errorMessage,
+        isError: true
+      });
     },
     onSettled: () => {
       setUpdatingStatus(false);
@@ -70,19 +111,86 @@ export const EventDetail = () => {
     setPendingStatus(null);
   };
 
-  const handleRegister = async () => {
+  const handleRegisterClick = () => {
+    setShowRegisterModal(true);
+  };
+
+  const handleCancelClick = () => {
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!event) return;
+    setCanceling(true);
+    try {
+      await eventService.cancelRegistration(event.id);
+      
+      // Invalidate queries to update available spots immediately
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: ['event', event.id] });
+
+      setShowCancelModal(false);
+      setResponseModal({
+        isOpen: true,
+        title: 'Inscripción Cancelada',
+        message: 'Te has retirado del evento correctamente.',
+        isError: false
+      });
+    } catch (err: unknown) {
+      setShowCancelModal(false);
+      let errorMessage = 'Ocurrió un error inesperado';
+      
+      if (err instanceof AxiosError && err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      setResponseModal({
+        isOpen: true,
+        title: 'Error de Cancelación',
+        message: errorMessage,
+        isError: true
+      });
+    } finally {
+      setCanceling(false);
+    }
+  };
+
+  const handleConfirmRegister = async () => {
     if (!event) return;
     setRegistering(true);
     try {
       await eventService.registerForEvent(event.id);
-      alert('¡Inscripción exitosa!');
-      navigate('/my-events');
+      
+      // Invalidate queries to update available spots immediately
+      await queryClient.invalidateQueries({ queryKey: ['events'] });
+      await queryClient.invalidateQueries({ queryKey: ['event', event.id] });
+
+      setShowRegisterModal(false);
+      setResponseModal({
+        isOpen: true,
+        title: 'Inscripción Exitosa',
+        message: 'Te has inscrito al evento correctamente.',
+        isError: false,
+        onClose: () => navigate('/my-events')
+      });
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        alert(err.message);
-      } else {
-        alert('Ocurrió un error inesperado');
+      setShowRegisterModal(false);
+      let errorMessage = 'Ocurrió un error inesperado';
+      
+      if (err instanceof AxiosError && err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
       }
+
+      setResponseModal({
+        isOpen: true,
+        title: 'Error de Inscripción',
+        message: errorMessage,
+        isError: true
+      });
     } finally {
       setRegistering(false);
     }
@@ -119,7 +227,7 @@ export const EventDetail = () => {
 
         <div className="px-4 py-5 sm:px-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <BackButton to="/events"/>
+            <BackButton to={location.pathname.startsWith('/my-events') ? "/my-events" : "/events"}/>
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
               <p className="mt-1 max-w-2xl text-sm text-gray-500">{event.location}</p>
@@ -139,13 +247,23 @@ export const EventDetail = () => {
                 />
               </div>
             )}
-            <button
-              onClick={handleRegister}
-              disabled={registering}
-              className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50"
-            >
-              {registering ? 'Inscribiendo...' : 'Inscribirse'}
-            </button>
+            {location.pathname.startsWith('/my-events') && event.is_registered ? (
+              <button
+                onClick={handleCancelClick}
+                disabled={canceling}
+                className="bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {canceling ? 'Retirándose...' : 'Retirarse'}
+              </button>
+            ) : (
+              <button
+                onClick={handleRegisterClick}
+                disabled={registering || event.status !== EventStatus.PUBLISHED || event.available_spots <= 0}
+                className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {event.available_spots <= 0 ? 'Agotado' : (registering ? 'Inscribiendo...' : 'Inscribirse')}
+              </button>
+            )}
           </div>
         </div>
         <div className="border-t border-gray-200 px-4 py-5 sm:px-6">
@@ -181,6 +299,25 @@ export const EventDetail = () => {
               </dt>
               <dd className="mt-1 text-sm text-gray-900">{event.max_capacity} personas</dd>
             </div>
+            {location.pathname.startsWith('/my-events') && (
+              <div className="sm:col-span-1">
+                <dt className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Estado de Inscripción
+                </dt>
+                <dd className="mt-1">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    event.is_registered 
+                      ? 'bg-green-100 text-green-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {event.is_registered ? 'Registrado' : 'Sin registrar'}
+                  </span>
+                </dd>
+              </div>
+            )}
           </dl>
         </div>
       </div>
@@ -247,6 +384,48 @@ export const EventDetail = () => {
         variant={pendingStatus === EventStatus.CANCELLED ? 'danger' : 'primary'}
         isLoading={updatingStatus}
       />
+
+      <ConfirmationModal
+        isOpen={showRegisterModal}
+        onClose={() => setShowRegisterModal(false)}
+        onConfirm={handleConfirmRegister}
+        title="Confirmar inscripción"
+        message={`¿Estás seguro que deseas inscribirte al evento "${event.title}"?`}
+        confirmText="Confirmar Inscripción"
+        cancelText="Cancelar"
+        variant="primary"
+        isLoading={registering}
+      />
+
+      <ConfirmationModal
+        isOpen={showCancelModal}
+        onClose={() => setShowCancelModal(false)}
+        onConfirm={handleConfirmCancel}
+        title="Confirmar Retiro"
+        message={`¿Estás seguro que deseas retirarte del evento "${event.title}"?`}
+        confirmText="Confirmar Retiro"
+        cancelText="Cancelar"
+        variant="danger"
+        isLoading={canceling}
+      />
+
+      {/* Generic Response Modal */}
+      <Modal
+        isOpen={responseModal.isOpen}
+        onClose={closeResponseModal}
+        title={responseModal.title}
+        footer={
+          <div className="flex justify-end">
+            <Button onClick={closeResponseModal} variant={responseModal.isError ? 'danger' : 'primary'}>
+              Cerrar
+            </Button>
+          </div>
+        }
+      >
+        <p className={`text-sm ${responseModal.isError ? 'text-red-600' : 'text-gray-600'}`}>
+          {responseModal.message}
+        </p>
+      </Modal>
     </div>
   );
 };
