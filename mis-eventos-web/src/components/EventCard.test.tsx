@@ -26,7 +26,7 @@ const mockEvent: Event = {
 describe('EventCard', () => {
   it('renders event details correctly', () => {
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={mockEvent} />
       </MemoryRouter>
     );
@@ -47,7 +47,7 @@ describe('EventCard', () => {
 
     statuses.forEach(status => {
       const { unmount } = render(
-        <MemoryRouter>
+        <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <EventCard event={{ ...mockEvent, status }} />
         </MemoryRouter>
       );
@@ -64,7 +64,7 @@ describe('EventCard', () => {
       image_desktop: 'http://example.com/image.jpg' 
     };
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={eventWithImage} />
       </MemoryRouter>
     );
@@ -79,7 +79,7 @@ describe('EventCard', () => {
       image_desktop: 'http://example.com/broken-image.jpg' 
     };
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={eventWithImage} />
       </MemoryRouter>
     );
@@ -92,7 +92,7 @@ describe('EventCard', () => {
   it('renders placeholder when no image', () => {
     const eventWithoutImage = { ...mockEvent, image_desktop: '', image_mobile: '' };
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={eventWithoutImage} />
       </MemoryRouter>
     );
@@ -106,7 +106,7 @@ describe('EventCard', () => {
   it('shows registered label on /my-events page', () => {
     const registeredEvent = { ...mockEvent, is_registered: true };
     render(
-      <MemoryRouter initialEntries={['/my-events']}>
+      <MemoryRouter initialEntries={['/my-events']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={registeredEvent} />
       </MemoryRouter>
     );
@@ -116,7 +116,7 @@ describe('EventCard', () => {
 
   it('shows unregistered label on /my-events page', () => {
     render(
-      <MemoryRouter initialEntries={['/my-events']}>
+      <MemoryRouter initialEntries={['/my-events']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={mockEvent} />
       </MemoryRouter>
     );
@@ -126,7 +126,7 @@ describe('EventCard', () => {
 
   it('does not show registration status on other pages', () => {
     render(
-      <MemoryRouter initialEntries={['/events']}>
+      <MemoryRouter initialEntries={['/events']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <EventCard event={{...mockEvent, is_registered: true}} />
       </MemoryRouter>
     );

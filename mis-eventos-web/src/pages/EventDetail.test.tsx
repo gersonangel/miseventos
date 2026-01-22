@@ -95,7 +95,7 @@ describe('EventDetail Page', () => {
   const renderEventDetail = (path = '/events/1') => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <MemoryRouter initialEntries={[path]}>
+        <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
             <Route path="/events/:id" element={<EventDetail />} />
             <Route path="/my-events/:id" element={<EventDetail />} />
@@ -229,6 +229,7 @@ describe('EventDetail Page', () => {
   });
 
   it('handles status update error with Axios details', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockUseAuth.mockReturnValue({
       user: { role: UserRole.ADMIN },
       isAuthenticated: true,
@@ -264,6 +265,7 @@ describe('EventDetail Page', () => {
     await waitFor(() => {
         expect(screen.queryByText('Error')).not.toBeInTheDocument();
     });
+    consoleSpy.mockRestore();
   });
 
   it('shows withdraw button when registered and on my-events path', async () => {
@@ -371,6 +373,7 @@ describe('EventDetail Page', () => {
   });
 
   it('handles status change error', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockUseAuth.mockReturnValue({
       user: { role: UserRole.ADMIN },
       isAuthenticated: true,
@@ -392,6 +395,7 @@ describe('EventDetail Page', () => {
         expect(screen.getByText('Error')).toBeInTheDocument();
         expect(screen.getByText('Error al actualizar el estado')).toBeInTheDocument();
     });
+    consoleSpy.mockRestore();
   });
 
   it('handles status change cancellation', async () => {

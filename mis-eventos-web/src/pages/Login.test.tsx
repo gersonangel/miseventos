@@ -37,7 +37,7 @@ describe('Login Page', () => {
 
   const renderLogin = () => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Login />
       </MemoryRouter>
     );
@@ -80,6 +80,7 @@ describe('Login Page', () => {
   });
 
   it('handles login error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     renderLogin();
     
     const errorResponse = { 

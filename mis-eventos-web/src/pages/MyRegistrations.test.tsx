@@ -24,7 +24,7 @@ describe('MyRegistrations Page', () => {
 
   const renderMyRegistrations = () => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <MyRegistrations />
       </MemoryRouter>
     );

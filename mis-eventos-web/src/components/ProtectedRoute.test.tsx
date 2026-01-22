@@ -21,7 +21,7 @@ describe('ProtectedRoute', () => {
     });
 
     render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ProtectedRoute />
       </MemoryRouter>
     );
@@ -45,7 +45,7 @@ describe('ProtectedRoute', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/protected']}>
+      <MemoryRouter initialEntries={['/protected']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/login" element={<div>Login Page</div>} />
           <Route element={<ProtectedRoute />}>
@@ -69,7 +69,7 @@ describe('ProtectedRoute', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/protected']}>
+      <MemoryRouter initialEntries={['/protected']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route element={<ProtectedRoute />}>
             <Route path="/protected" element={<TestComponent />} />
@@ -91,7 +91,7 @@ describe('ProtectedRoute', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/protected']}>
+      <MemoryRouter initialEntries={['/protected']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
             <Route path="/protected" element={<TestComponent />} />
@@ -113,7 +113,7 @@ describe('ProtectedRoute', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/protected']}>
+      <MemoryRouter initialEntries={['/protected']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Routes>
           <Route path="/" element={<div>Home Page</div>} />
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>

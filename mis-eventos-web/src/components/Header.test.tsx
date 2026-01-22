@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Header } from './Header';
-import { BrowserRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { UserRole } from '../types';
 
@@ -33,9 +33,9 @@ const renderWithAuth = (user: any, logout = vi.fn()) => {
       login: vi.fn(), 
       isLoading: false
     }}>
-      <BrowserRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Header />
-      </BrowserRouter>
+      </MemoryRouter>
     </AuthContext.Provider>
   );
 };

@@ -56,6 +56,7 @@ describe('AuthContext', () => {
   });
 
   it('logs out if token is invalid', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     localStorage.setItem('token', 'invalid-token');
     (api.get as any).mockRejectedValue(new Error('Unauthorized'));
 
@@ -69,6 +70,7 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('auth-status')).toHaveTextContent('Not Authenticated');
     });
     expect(localStorage.getItem('token')).toBeNull();
+    consoleSpy.mockRestore();
   });
 
   it('login function sets token and fetches user', async () => {

@@ -103,7 +103,7 @@ describe('Sessions Page', () => {
 
   const renderSessions = () => {
     return render(
-      <MemoryRouter>
+      <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Sessions />
       </MemoryRouter>
     );
@@ -264,6 +264,7 @@ describe('Sessions Page', () => {
   });
 
   it('handles session creation error', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
     mockCreateSession.mockRejectedValue({ response: { data: { detail: 'Creation Error' } } });
     renderSessions();
     fireEvent.change(screen.getByTestId('select-event'), { target: { value: 'event-1' } });
