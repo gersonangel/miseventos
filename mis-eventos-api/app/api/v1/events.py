@@ -7,6 +7,7 @@ from app.dependencies import get_current_active_user, get_current_user, get_opti
 from app.models.user import User
 from app.schemas.event import EventCreate, EventResponse, EventUpdate, EventListResponse
 from app.services.event_service import EventService
+from app.services.cache_service import cache_service
 from app.utils.enums import EventStatus, EventType
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Request, HTTPException
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -72,7 +73,9 @@ async def create_event(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     service = EventService(db)
-    return await service.create_event(event_data, current_user)
+    result = await service.create_event(event_data, current_user)
+    await cache_service.clear_pattern("events_list:*")
+    return result
 
 
 @router.get(
@@ -93,9 +96,18 @@ async def list_events(
     start_date_to: Optional[datetime] = None,
     available_spots_only: bool = Query(False, description="Mostrar solo eventos con cupos disponibles"),
 ):
+    # Generar clave de caché única basada en los parámetros
+    user_id = str(current_user.id) if current_user else "anon"
+    cache_key = f"events_list:{page}:{size}:{status}:{event_type}:{search}:{start_date_from}:{start_date_to}:{available_spots_only}:{user_id}"
+
+    # Intentar obtener del caché
+    cached_data = await cache_service.get(cache_key)
+    if cached_data:
+        return EventListResponse.model_validate_json(cached_data)
+
     service = EventService(db)
     skip = (page - 1) * size
-    return await service.list_events(
+    result = await service.list_events(
         skip=skip,
         limit=size,
         status_filter=status,
@@ -106,6 +118,11 @@ async def list_events(
         user=current_user,
         available_spots_only=available_spots_only,
     )
+    
+    # Guardar en caché
+    await cache_service.set(cache_key, result.model_dump_json())
+    
+    return result
 
 
 @router.get(
@@ -118,9 +135,20 @@ async def get_event(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[Optional[User], Depends(get_optional_current_user)] = None,
 ):
+    # Intentar obtener del caché
+    cache_key = f"event_detail:{event_id}"
+    cached_data = await cache_service.get(cache_key)
+    if cached_data:
+        return EventResponse.model_validate_json(cached_data)
+
     service = EventService(db)
     # Ya retorna un objeto Pydantic con available_spots calculado
-    return await service.get_event(event_id, current_user)
+    result = await service.get_event(event_id, current_user)
+    
+    # Guardar en caché
+    await cache_service.set(cache_key, result.model_dump_json())
+    
+    return result
 
 
 @router.put(
@@ -146,6 +174,8 @@ async def update_event(
         # Pero available_spots está definido en el schema
         response.available_spots = response.max_capacity - count
         
+    await cache_service.clear_pattern("events_list:*")
+    await cache_service.delete(f"event_detail:{event_id}")
     return response
 
 
@@ -160,7 +190,9 @@ async def register_to_event(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     service = EventService(db)
-    return await service.register_attendee(event_id, current_user)
+    result = await service.register_attendee(event_id, current_user)
+    await cache_service.clear_pattern("events_list:*")
+    return result
 
 
 @router.delete(
@@ -174,4 +206,6 @@ async def cancel_registration(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):
     service = EventService(db)
-    return await service.cancel_attendee_registration(event_id, current_user)
+    result = await service.cancel_attendee_registration(event_id, current_user)
+    await cache_service.clear_pattern("events_list:*")
+    return result
