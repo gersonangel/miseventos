@@ -15,6 +15,7 @@ import { STATUS_LABELS } from '../constants/event';
 
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
+import { Spinner } from '../components/ui/Spinner';
 
 export const EventDetail = () => {
   const { id } = useParams<{ id: string }>();
@@ -196,7 +197,11 @@ export const EventDetail = () => {
     }
   };
 
-  if (eventLoading) return <div>Cargando...</div>;
+  if (eventLoading) return (
+    <div className="flex justify-center items-center py-12">
+      <Spinner size="lg" />
+    </div>
+  );
   if (eventError || !event) return <div className="text-red-500">Evento no encontrado</div>;
 
   return (
@@ -324,7 +329,9 @@ export const EventDetail = () => {
 
       <h2 className="text-2xl font-bold mb-4">Sesiones</h2>
       {sessionsLoading ? (
-        <div>Cargando sesiones...</div>
+        <div className="flex justify-center py-8">
+          <Spinner size="lg" />
+        </div>
       ) : (
         <div className="grid gap-4">
           {sessions?.map(session => (
