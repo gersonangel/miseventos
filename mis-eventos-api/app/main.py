@@ -1,14 +1,26 @@
 from app.api.v1 import auth, users, events, sessions
 from app.config import settings
+from app.services.cache_service import cache_service
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 import os
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    yield
+    # Shutdown
+    await cache_service.close()
+
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="API para la gestión de eventos corporativos",
+    lifespan=lifespan,
 )
 
 # Crear directorio de uploads si no existe
