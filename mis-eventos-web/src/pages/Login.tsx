@@ -3,11 +3,13 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import miseventosLogo from '../assets/miseventos.png';
 import { api } from '../lib/axios';
+import { Button } from '../components/ui/Button';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -28,6 +30,7 @@ export const Login = () => {
       return;
     }
     
+    setIsSubmitting(true);
     try {
       const params = new URLSearchParams();
       params.append('username', email);
@@ -43,6 +46,7 @@ export const Login = () => {
       navigate('/');
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
+      setIsSubmitting(false);
       console.error(err);
       if (err.response?.data?.detail) {
         const detail = err.response.data.detail;
@@ -111,12 +115,13 @@ export const Login = () => {
             </div>
 
             <div>
-              <button
+              <Button
                 type="submit"
-                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="w-full"
+                isLoading={isSubmitting}
               >
                 Entrar
-              </button>
+              </Button>
             </div>
           </form>
 
