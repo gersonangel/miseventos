@@ -1,18 +1,25 @@
 from app.api.v1 import auth, users, events, sessions
 from app.config import settings
+from app.scheduler import start_scheduler, stop_scheduler
 from app.services.cache_service import cache_service
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import os
+import logging
 
+# Configurar logging global
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    start_scheduler()
     yield
     # Shutdown
+    stop_scheduler()
     await cache_service.close()
 
 
