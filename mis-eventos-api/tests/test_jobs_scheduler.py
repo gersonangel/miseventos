@@ -10,6 +10,8 @@ from app.models.event import Event
 async def test_update_finished_events():
     # Mock session
     mock_session = AsyncMock()
+    # session.add is synchronous, so we need a MagicMock, not AsyncMock
+    mock_session.add = MagicMock()
     
     # Mock result for select
     mock_event = Event(
@@ -47,6 +49,8 @@ async def test_update_finished_events():
 async def test_update_finished_events_no_events():
     # Mock session
     mock_session = AsyncMock()
+    # session.add is synchronous
+    mock_session.add = MagicMock()
     
     mock_result = MagicMock()
     mock_result.all.return_value = []
