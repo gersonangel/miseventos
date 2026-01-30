@@ -11,7 +11,7 @@ describe('Spinner', () => {
 
   it('applies size classes', () => {
     const { rerender } = render(<Spinner size="lg" />);
-    expect(screen.getByTestId('spinner')).toHaveClass('h-4 w-4');
+    expect(screen.getByTestId('spinner')).toHaveClass('h-12 w-12');
 
     rerender(<Spinner size="lg" />);
     expect(screen.getByTestId('spinner')).toHaveClass('h-12 w-12');

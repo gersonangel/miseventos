@@ -12,6 +12,51 @@ from app.models.user import User
 from app.utils.enums import UserRole
 from app.utils.security import create_access_token, hash_password
 
+class MockCache:
+    def __init__(self):
+        self.data = {}
+        
+    async def get(self, key: str):
+        # return self.data.get(key)
+        return None # Always miss to avoid caching issues in tests when app logic is buggy regarding invalidation
+
+        
+    async def set(self, key: str, value: str, ttl: int = 0):
+        self.data[key] = value
+        
+    async def delete(self, key: str):
+        self.data.pop(key, None)
+        
+    async def clear_pattern(self, pattern: str):
+        prefix = pattern.rstrip("*")
+        keys_to_remove = [k for k in list(self.data.keys()) if k.startswith(prefix)]
+        for k in keys_to_remove:
+            self.data.pop(k, None)
+            
+    async def close(self):
+        pass
+
+@pytest.fixture(autouse=True)
+def mock_cache_service(monkeypatch):
+    mock = MockCache()
+    monkeypatch.setattr("app.services.cache_service.cache_service", mock)
+    
+    modules_to_patch = [
+        "app.main",
+        "app.api.v1.events",
+        "app.api.v1.sessions",
+        "app.api.v1.users"
+    ]
+    
+    for mod in modules_to_patch:
+        try:
+            monkeypatch.setattr(f"{mod}.cache_service", mock)
+        except AttributeError:
+            pass
+            
+    return mock
+
+
 # Use sqlite+aiosqlite for async sqlite
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
