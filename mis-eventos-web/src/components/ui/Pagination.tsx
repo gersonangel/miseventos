@@ -1,0 +1,115 @@
+import React from 'react';
+import { Button } from './Button';
+import { Select } from './Select';
+
+interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  hasNextPage?: boolean;
+  hasPreviousPage?: boolean;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
+  pageSizeOptions?: number[];
+  totalItems?: number;
+}
+
+export const Pagination: React.FC<PaginationProps> = ({ 
+  currentPage, 
+  totalPages, 
+  onPageChange,
+  hasNextPage,
+  hasPreviousPage,
+  pageSize = 5,
+  onPageSizeChange,
+  pageSizeOptions = [5, 10, 50, 100],
+  totalItems
+}) => {
+  // If no explicit hasNext/Prev, calculate from totalPages
+  const canGoBack = hasPreviousPage !== undefined ? hasPreviousPage : currentPage > 1;
+  const canGoForward = hasNextPage !== undefined ? hasNextPage : currentPage < totalPages;
+
+  const handlePageSizeChange = (value: string) => {
+    if (onPageSizeChange) {
+      onPageSizeChange(Number(value));
+      onPageChange(1); // Reset to first page when size changes
+    }
+  };
+
+  return (
+    <div className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
+      <div className="flex flex-1 justify-between sm:hidden">
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={!canGoBack}
+        >
+          Anterior
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={!canGoForward}
+        >
+          Siguiente
+        </Button>
+      </div>
+      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-gray-700">
+            Mostrando <span className="font-medium">{Math.min((currentPage - 1) * pageSize + 1, totalItems || totalPages * pageSize)}</span> a{' '}
+            <span className="font-medium">{Math.min(currentPage * pageSize, totalItems || totalPages * pageSize)}</span> de{' '}
+            <span className="font-medium">{totalItems || totalPages * pageSize}</span> resultados
+          </p>
+          {onPageSizeChange && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-700">Mostrar</span>
+              <div className="w-20">
+                <Select
+                  value={pageSize}
+                  onChange={handlePageSizeChange}
+                  options={pageSizeOptions.map(size => ({
+                    value: size,
+                    label: size.toString()
+                  }))}
+                />
+              </div>
+              <span className="text-sm text-gray-700">registros</span>
+            </div>
+          )}
+        </div>
+        <div>
+          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+            <Button
+              variant="secondary"
+              className="rounded-l-md rounded-r-none px-2 py-2"
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={!canGoBack}
+            >
+              <span className="sr-only">Anterior</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+              </svg>
+            </Button>
+            
+            {/* Simple version: just current page logic for now */}
+            
+            <Button
+              variant="secondary"
+              className="rounded-r-md rounded-l-none px-2 py-2"
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={!canGoForward}
+            >
+              <span className="sr-only">Siguiente</span>
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+              </svg>
+            </Button>
+          </nav>
+        </div>
+      </div>
+    </div>
+  );
+};
